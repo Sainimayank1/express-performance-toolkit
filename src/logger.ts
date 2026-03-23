@@ -166,6 +166,7 @@ export function createLoggerMiddleware(
         timestamp: Date.now(),
         slow: isSlow,
         cached: res.getHeader("X-Cache") === "HIT",
+        highQueries: req.perfToolkit?.highQueries || false,
         queryCount: req.perfToolkit?.queryCount,
         contentLength:
           parseInt(res.getHeader("content-length") as string, 10) || undefined,

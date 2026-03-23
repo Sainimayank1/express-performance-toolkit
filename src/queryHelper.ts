@@ -31,6 +31,8 @@ export function createQueryHelperMiddleware(
 
       // Warn if threshold exceeded
       if (req.perfToolkit!.queryCount === threshold) {
+        req.perfToolkit!.highQueries = true;
+        
         console.warn(
           `[perf] ⚠️  N+1 Alert: ${req.method} ${req.originalUrl || req.url} ` +
             `has made ${threshold}+ queries. Consider optimizing with batch/join queries.`

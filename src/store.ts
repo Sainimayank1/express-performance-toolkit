@@ -1,4 +1,4 @@
-import { LogEntry, Metrics, RouteStats } from './types';
+import { LogEntry, Metrics, RouteStats } from "./types";
 
 /**
  * In-memory metrics store — shared state between all middleware components.
@@ -11,6 +11,7 @@ export class MetricsStore {
     totalRequests: number;
     totalResponseTime: number;
     slowRequests: number;
+    highQueryRequests: number;
     cacheHits: number;
     cacheMisses: number;
     cacheSize: number;
@@ -26,6 +27,7 @@ export class MetricsStore {
       totalRequests: 0,
       totalResponseTime: 0,
       slowRequests: 0,
+      highQueryRequests: 0,
       cacheHits: 0,
       cacheMisses: 0,
       cacheSize: 0,
@@ -62,6 +64,7 @@ export class MetricsStore {
         count: 0,
         totalTime: 0,
         slowCount: 0,
+        highQueryCount: 0,
         avgTime: 0,
       };
     }
@@ -71,6 +74,10 @@ export class MetricsStore {
     route.avgTime = Math.round(route.totalTime / route.count);
     if (entry.slow) {
       route.slowCount++;
+    }
+    if (entry.highQueries) {
+      this.stats.highQueryRequests++;
+      route.highQueryCount++;
     }
   }
 
@@ -108,6 +115,7 @@ export class MetricsStore {
       totalRequests: this.stats.totalRequests,
       avgResponseTime,
       slowRequests: this.stats.slowRequests,
+      highQueryRequests: this.stats.highQueryRequests,
       cacheHits: this.stats.cacheHits,
       cacheMisses: this.stats.cacheMisses,
       cacheHitRate,
@@ -124,6 +132,7 @@ export class MetricsStore {
     this.stats.totalRequests = 0;
     this.stats.totalResponseTime = 0;
     this.stats.slowRequests = 0;
+    this.stats.highQueryRequests = 0;
     this.stats.cacheHits = 0;
     this.stats.cacheMisses = 0;
     this.stats.cacheSize = 0;

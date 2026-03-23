@@ -706,9 +706,11 @@
           <div class="kpi-subtext" id="cacheEntries">0 entries active</div>
         </div>
         <div class="kpi-card grad-2 animate-in delay-5">
-          <div class="kpi-title">Successful (2xx)</div>
-          <div class="kpi-value" id="status2xx">0</div>
-          <div class="kpi-subtext" id="errorRate">0% error rate</div>
+          <div class="kpi-title">N+1 Query Alerts</div>
+          <div class="kpi-value val-amber" id="highQueryRequests">0</div>
+          <div class="kpi-subtext">
+            <span id="highQueryPct">0% of total</span>
+          </div>
         </div>
       </div>
 
@@ -726,8 +728,8 @@
                   <tr>
                     <th>Route Path</th>
                     <th>Calls</th>
-                    <th>Avg Time</th>
-                    <th>Slow Flags</th>
+                    <th>Avg Latency</th>
+                    <th>Anomalies</th>
                   </tr>
                 </thead>
                 <tbody id="routesBody">
@@ -963,20 +965,14 @@
           m.cacheSize + " active";
         document.getElementById("uptime").textContent = formatUptime(m.uptime);
 
-        // 2xx count
-        let s2 = 0,
-          sErr = 0;
-        Object.entries(m.statusCodes).forEach(([code, count]) => {
-          if (code < 300) s2 += count;
-          if (code >= 400) sErr += count;
-        });
-        document.getElementById("status2xx").textContent = s2;
-        const errRate =
+        document.getElementById("highQueryRequests").textContent =
+          m.highQueryRequests || 0;
+        const hqPct =
           m.totalRequests > 0
-            ? ((sErr / m.totalRequests) * 100).toFixed(1)
+            ? (((m.highQueryRequests || 0) / m.totalRequests) * 100).toFixed(1)
             : "0";
-        document.getElementById("errorRate").textContent =
-          errRate + "% error rate";
+        document.getElementById("highQueryPct").textContent =
+          hqPct + "% of total";
 
         // Donut Chart
         const hitPct = m.cacheHitRate;
@@ -1016,10 +1012,23 @@
         if (routeEntries.length > 0) {
           document.getElementById("routesBody").innerHTML = routeEntries
             .map(([route, stats]) => {
-              const slowLabel =
-                stats.slowCount > 0
-                  ? `<span class="badge" style="color:var(--accent-rose)"><span class="fire-icon">🔥</span> ${stats.slowCount}</span>`
+              let anomalies = [];
+              if (stats.slowCount > 0)
+                anomalies.push(
+                  `<span class="fire-icon">🔥</span> <span style="color:var(--accent-rose)">${stats.slowCount} Slow</span>`,
+                );
+              if (stats.highQueryCount > 0)
+                anomalies.push(
+                  `<span style="color:var(--accent-amber)">⚠️</span> <span style="color:var(--accent-amber)">${stats.highQueryCount} N+1</span>`,
+                );
+
+              const anomalyLabel =
+                anomalies.length > 0
+                  ? anomalies.join(
+                      ' <span style="color:var(--border); margin:0 4px">|</span> ',
+                    )
                   : `<span style="color:var(--text-400)">-</span>`;
+
               const timeClass = getTimeClass(stats.avgTime);
               return `<tr>
             <td class="route-path">${route}</td>

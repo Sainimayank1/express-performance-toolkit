@@ -93,6 +93,7 @@ export interface LogEntry {
   slow: boolean;
   cached: boolean;
   queryCount?: number;
+  highQueries?: boolean;
   contentLength?: number;
   userAgent?: string;
   ip?: string;
@@ -102,6 +103,7 @@ export interface RouteStats {
   count: number;
   totalTime: number;
   slowCount: number;
+  highQueryCount: number;
   avgTime: number;
 }
 
@@ -110,6 +112,7 @@ export interface Metrics {
   totalRequests: number;
   avgResponseTime: number;
   slowRequests: number;
+  highQueryRequests: number;
   cacheHits: number;
   cacheMisses: number;
   cacheHitRate: number;
@@ -154,6 +157,7 @@ declare global {
       perfToolkit?: {
         startTime: number;
         queryCount: number;
+        highQueries?: boolean;
         trackQuery: (label?: string) => void;
       };
     }
