@@ -139,7 +139,11 @@ export function createLoggerMiddleware(
     const reqPath = req.originalUrl || req.url;
 
     // Ignore dashboard API paths (use includes to handle query strings)
-    if (reqPath.includes("/api/metrics") || reqPath.includes("/api/reset")) {
+    if (
+      reqPath.includes("/api/metrics") ||
+      reqPath.includes("/api/reset") ||
+      reqPath.includes("/api/__perf")
+    ) {
       return next();
     }
 

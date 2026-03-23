@@ -9,6 +9,13 @@ export interface RouteStats {
   avgTime: number;
 }
 
+export interface BlockedEvent {
+  ip: string;
+  path: string;
+  timestamp: number;
+  method: string;
+}
+
 export interface LogEntry {
   method: string;
   path: string;
@@ -42,6 +49,7 @@ export interface MetricsData {
   statusCodes: Record<number, number>;
   routes: Record<string, RouteStats>;
   recentLogs: LogEntry[];
+  blockedEvents: BlockedEvent[];
 }
 
 export function useMetrics() {
@@ -80,8 +88,8 @@ export function useMetrics() {
             return [...prev, newPoint].slice(-30);
           });
         }
-      } catch (e: any) {
-        if (mounted) setError(e);
+      } catch (e: unknown) {
+        if (mounted) setError(e instanceof Error ? e : new Error(String(e)));
       }
     };
 

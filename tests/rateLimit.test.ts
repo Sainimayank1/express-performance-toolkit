@@ -47,5 +47,11 @@ describe('Smart Rate Limiter', () => {
     const metrics = toolkit.store.getMetrics();
     expect(metrics.rateLimitHits).toBe(1);
     expect(metrics.routes['GET /api'].rateLimitHits).toBe(1);
+    
+    // Check blocked event details
+    expect(metrics.blockedEvents).toHaveLength(1);
+    expect(metrics.blockedEvents[0].ip).toBeDefined();
+    expect(metrics.blockedEvents[0].path).toBe('/api');
+    expect(metrics.blockedEvents[0].method).toBe('GET');
   });
 });

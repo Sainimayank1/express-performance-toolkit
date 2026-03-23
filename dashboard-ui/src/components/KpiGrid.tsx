@@ -1,8 +1,12 @@
-import { Activity, Zap, AlertTriangle, Database } from "lucide-react";
+import { Activity, Zap, AlertTriangle, Database, ShieldAlert } from "lucide-react";
 import type { MetricsData } from "../hooks/useMetrics";
 import { fNum, fPct } from "../utils/formatters";
+import { useState } from "react";
+import { BlockedModal } from "./BlockedModal";
 
 export function KpiGrid({ data }: { data: MetricsData }) {
+  const [isModalOpen, setModalOpen] = useState(false);
+
   const rps =
     data.uptime > 0
       ? (data.totalRequests / (data.uptime / 1000)).toFixed(1)
@@ -94,9 +98,9 @@ export function KpiGrid({ data }: { data: MetricsData }) {
           </span>
         </div>
       </div>
-      <div className="kpi-card grad-4 animate-in delay-6">
+      <div className="kpi-card grad-4 animate-in delay-6" style={{ position: 'relative' }}>
         <div className="kpi-title">
-          <AlertTriangle
+          <ShieldAlert
             size={14}
             style={{
               display: "inline",
@@ -107,8 +111,32 @@ export function KpiGrid({ data }: { data: MetricsData }) {
           Blocked Traffic
         </div>
         <div className="kpi-value val-rose">{fNum(data.rateLimitHits)}</div>
-        <div className="kpi-subtext">Rate limit 429</div>
+        <div className="kpi-subtext" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span>Rate limit 429</span>
+          {data.rateLimitHits > 0 && (
+            <button 
+              onClick={() => setModalOpen(true)}
+              style={{ 
+                background: 'rgba(244, 63, 94, 0.1)', 
+                border: '1px solid rgba(244, 63, 94, 0.2)',
+                borderRadius: '4px',
+                color: 'var(--accent-rose)',
+                padding: '2px 8px',
+                fontSize: '0.7rem',
+                cursor: 'pointer'
+              }}
+            >
+              View Details
+            </button>
+          )}
+        </div>
       </div>
+
+      <BlockedModal 
+        isOpen={isModalOpen} 
+        onClose={() => setModalOpen(false)} 
+        events={data.blockedEvents || []} 
+      />
     </div>
   );
 }
