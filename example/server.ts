@@ -1,0 +1,126 @@
+import express, { Request, Response } from 'express';
+import { performanceToolkit } from '../src/index';
+
+const app = express();
+const PORT = 3000;
+
+// ── Initialize Performance Toolkit ──────────────────────────
+const toolkit = performanceToolkit({
+  cache: {
+    ttl: 30000,       // 30s cache TTL
+    maxSize: 50,
+    exclude: ['/api/random', '/__perf'],
+  },
+  compression: true,
+  logSlowRequests: {
+    slowThreshold: 500,  // Flag requests > 500ms as slow
+    console: true,
+  },
+  queryHelper: {
+    threshold: 5,
+  },
+  dashboard: true,
+});
+
+// Apply the middleware
+app.use(toolkit.middleware);
+
+// Mount the dashboard
+app.use('/__perf', toolkit.dashboardRouter);
+
+// ── Sample API Routes ───────────────────────────────────────
+
+// Fast route — should be cached after first hit
+app.get('/api/users', (_req: Request, res: Response) => {
+  const users = [
+    { id: 1, name: 'Alice Johnson', email: 'alice@example.com', role: 'admin' },
+    { id: 2, name: 'Bob Smith', email: 'bob@example.com', role: 'user' },
+    { id: 3, name: 'Charlie Brown', email: 'charlie@example.com', role: 'user' },
+    { id: 4, name: 'Diana Prince', email: 'diana@example.com', role: 'moderator' },
+    { id: 5, name: 'Eve Wilson', email: 'eve@example.com', role: 'user' },
+  ];
+  res.json({ users, count: users.length });
+});
+
+// Slow route — simulates a 1.5s delay (triggers slow detection)
+app.get('/api/slow', (_req: Request, res: Response) => {
+  setTimeout(() => {
+    res.json({
+      message: 'This response was intentionally delayed',
+      processingTime: '1500ms',
+    });
+  }, 1500);
+});
+
+// Medium-speed route
+app.get('/api/products', (_req: Request, res: Response) => {
+  setTimeout(() => {
+    res.json({
+      products: [
+        { id: 1, name: 'Laptop Pro', price: 1299.99, stock: 25 },
+        { id: 2, name: 'Wireless Mouse', price: 29.99, stock: 150 },
+        { id: 3, name: 'USB-C Hub', price: 49.99, stock: 75 },
+      ],
+    });
+  }, 300);
+});
+
+// Random data — excluded from cache
+app.get('/api/random', (_req: Request, res: Response) => {
+  res.json({
+    value: Math.random(),
+    timestamp: Date.now(),
+  });
+});
+
+// Route demonstrating query tracking
+app.get('/api/posts', (req: Request, res: Response) => {
+  // Simulate multiple DB queries (potential N+1)
+  const posts = [];
+  for (let i = 0; i < 12; i++) {
+    req.perfToolkit?.trackQuery(`SELECT * FROM comments WHERE post_id=${i}`);
+    posts.push({
+      id: i,
+      title: `Post ${i}`,
+      commentCount: Math.floor(Math.random() * 20),
+    });
+  }
+  res.json({ posts });
+});
+
+// POST route — not cached
+app.post('/api/users', express.json(), (req: Request, res: Response) => {
+  res.status(201).json({
+    message: 'User created',
+    user: req.body,
+  });
+});
+
+// Error route
+app.get('/api/error', (_req: Request, _res: Response) => {
+  throw new Error('Something went wrong!');
+});
+
+// Error handler
+app.use((err: Error, _req: Request, res: Response, _next: express.NextFunction) => {
+  console.error(err.stack);
+  res.status(500).json({ error: err.message });
+});
+
+// ── Start Server ────────────────────────────────────────────
+app.listen(PORT, () => {
+  console.log('');
+  console.log('  ⚡ Express Performance Toolkit — Example Server');
+  console.log('  ────────────────────────────────────────────────');
+  console.log(`  🚀 Server:    http://localhost:${PORT}`);
+  console.log(`  📊 Dashboard: http://localhost:${PORT}/__perf`);
+  console.log('');
+  console.log('  Try these endpoints:');
+  console.log(`    GET  http://localhost:${PORT}/api/users     (fast, cached)`);
+  console.log(`    GET  http://localhost:${PORT}/api/slow      (slow, triggers alert)`);
+  console.log(`    GET  http://localhost:${PORT}/api/products  (medium speed)`);
+  console.log(`    GET  http://localhost:${PORT}/api/random    (not cached)`);
+  console.log(`    GET  http://localhost:${PORT}/api/posts     (N+1 query warning)`);
+  console.log(`    POST http://localhost:${PORT}/api/users     (not cached)`);
+  console.log('');
+});
