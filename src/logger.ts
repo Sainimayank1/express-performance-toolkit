@@ -1,14 +1,14 @@
-import { Request, Response, NextFunction } from 'express';
-import onFinished from 'on-finished';
-import { LoggerOptions, LogEntry } from './types';
-import { MetricsStore } from './store';
+import { Request, Response, NextFunction } from "express";
+import onFinished from "on-finished";
+import { LoggerOptions, LogEntry } from "./types";
+import { MetricsStore } from "./store";
 
 /**
  * Default log formatter for console output.
  */
 function defaultFormatter(entry: LogEntry): string {
-  const slow = entry.slow ? ' 🔥 SLOW' : '';
-  const cached = entry.cached ? ' [CACHED]' : '';
+  const slow = entry.slow ? " 🔥 SLOW" : "";
+  const cached = entry.cached ? " [CACHED]" : "";
   const status = entry.statusCode;
   const time = `${entry.responseTime}ms`;
 
@@ -20,7 +20,7 @@ function defaultFormatter(entry: LogEntry): string {
  */
 export function createLoggerMiddleware(
   options: LoggerOptions = {},
-  store: MetricsStore
+  store: MetricsStore,
 ): (req: Request, res: Response, next: NextFunction) => void {
   const {
     slowThreshold = 1000,
@@ -30,6 +30,12 @@ export function createLoggerMiddleware(
 
   return (req: Request, res: Response, next: NextFunction): void => {
     const startTime = Date.now();
+    const reqPath = req.originalUrl || req.url;
+
+    // Ignore dashboard API paths (use includes to handle query strings)
+    if (reqPath.includes("/api/metrics") || reqPath.includes("/api/reset")) {
+      return next();
+    }
 
     // Attach perf data to request
     if (!req.perfToolkit) {
@@ -53,10 +59,11 @@ export function createLoggerMiddleware(
         responseTime,
         timestamp: Date.now(),
         slow: isSlow,
-        cached: res.getHeader('X-Cache') === 'HIT',
+        cached: res.getHeader("X-Cache") === "HIT",
         queryCount: req.perfToolkit?.queryCount,
-        contentLength: parseInt(res.getHeader('content-length') as string, 10) || undefined,
-        userAgent: req.get('user-agent'),
+        contentLength:
+          parseInt(res.getHeader("content-length") as string, 10) || undefined,
+        userAgent: req.get("user-agent"),
         ip: req.ip,
       };
 
