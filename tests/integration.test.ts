@@ -14,11 +14,14 @@ describe("Integration Tests", () => {
         exclude: ["/no-cache"],
       },
       compression: false, // disable for easier testing
+      dashboard: {
+        enabled: true,
+        auth: null as any,
+      },
       logSlowRequests: {
         slowThreshold: 100,
-        console: false, // suppress console in tests
+        console: false,
       },
-      dashboard: true,
     });
 
     app.use(toolkit.middleware);
@@ -102,8 +105,10 @@ describe("Integration Tests", () => {
       expect(resetRes.body.success).toBe(true);
 
       const metricsRes = await request(app).get("/__perf/api/metrics");
-      // The GET request to fetch metrics itself gets logged, so we expect at most 1
-      expect(metricsRes.body.totalRequests).toBeLessThanOrEqual(1);
+
+      // Dashboard requests are now excluded from logging to prevent lags
+      // So fetching metrics should not increment the request count
+      expect(metricsRes.body.totalRequests).toBe(0);
     });
   });
 

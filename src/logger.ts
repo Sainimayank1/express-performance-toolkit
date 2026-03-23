@@ -122,6 +122,7 @@ export function createLoggerMiddleware(
     file: logFilePath,
     rotation = false,
     maxDays = 7,
+    exclude = [],
     formatter = defaultFormatter,
   } = options;
 
@@ -138,11 +139,24 @@ export function createLoggerMiddleware(
     const startTime = Date.now();
     const reqPath = req.originalUrl || req.url;
 
-    // Ignore dashboard API paths
+    // Check exclusions
+    const isExcluded = exclude.some((pattern) => {
+      if (pattern instanceof RegExp) return pattern.test(reqPath);
+      if (typeof pattern === "string") {
+        return (
+          reqPath === pattern ||
+          reqPath.startsWith(pattern + "/") ||
+          reqPath.startsWith(pattern + "?")
+        );
+      }
+      return false;
+    });
+
     if (
-      reqPath.includes("/api/metrics") ||
-      reqPath.includes("/api/reset") ||
-      reqPath.includes("/api/__perf")
+      isExcluded ||
+      reqPath.includes("/metrics") ||
+      reqPath.includes("/reset") ||
+      reqPath.includes("/__perf")
     ) {
       return next();
     }

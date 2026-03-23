@@ -49,6 +49,8 @@ export interface LoggerOptions {
   rotation?: boolean;
   /** Delete log files older than this many days (default: 7). Requires rotation: true */
   maxDays?: number;
+  /** URL patterns to exclude from logging */
+  exclude?: (string | RegExp)[];
   /** Custom log formatter */
   formatter?: (entry: LogEntry) => string;
 }

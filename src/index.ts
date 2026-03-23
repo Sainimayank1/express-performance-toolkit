@@ -77,8 +77,8 @@ export function performanceToolkit(
   if (rateLimitConfig.enabled !== false) {
     // Automatically exclude dashboard from rate limiting to prevent UI lockouts
     rateLimitConfig.exclude = [
-      ...(rateLimitConfig.exclude || []),
       dashboardExcludePath,
+      ...(rateLimitConfig.exclude || []),
     ];
     middlewares.push(createRateLimiter(store, rateLimitConfig));
   }
@@ -105,6 +105,10 @@ export function performanceToolkit(
     enabled: true,
   });
   if (loggerConfig.enabled !== false) {
+    loggerConfig.exclude = [
+      dashboardExcludePath,
+      ...(loggerConfig.exclude || []),
+    ];
     middlewares.push(createLoggerMiddleware(loggerConfig, store));
   }
 
@@ -113,6 +117,11 @@ export function performanceToolkit(
     enabled: false,
   });
   if (cacheConfig.enabled !== false) {
+    // Automatically exclude dashboard from caching to prevent metrics lag
+    cacheConfig.exclude = [
+      dashboardExcludePath,
+      ...(cacheConfig.exclude || []),
+    ];
     cacheMiddlewareInstance = createCacheMiddleware(cacheConfig, store);
     middlewares.push(cacheMiddlewareInstance);
   }

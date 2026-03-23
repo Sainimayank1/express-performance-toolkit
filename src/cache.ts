@@ -143,7 +143,10 @@ export function createCacheMiddleware(
   function shouldExclude(url: string): boolean {
     return exclude.some((pattern) => {
       if (pattern instanceof RegExp) return pattern.test(url);
-      return url.includes(pattern);
+      if (typeof pattern === "string") {
+        return url === pattern || url.startsWith(pattern + "/") || url.startsWith(pattern + "?");
+      }
+      return false;
     });
   }
 

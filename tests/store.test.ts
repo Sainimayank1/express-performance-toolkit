@@ -15,6 +15,7 @@ describe("MetricsStore", () => {
       statusCode: 200,
       responseTime: 50,
       timestamp: Date.now(),
+      bytesSent: 0,
       slow: false,
       cached: false,
       ...overrides,
@@ -22,8 +23,8 @@ describe("MetricsStore", () => {
   }
 
   it("should add log entries and update aggregate stats", () => {
-    store.addLog(makeEntry({ responseTime: 100 }));
-    store.addLog(makeEntry({ responseTime: 200 }));
+    store.recordLog(makeEntry({ responseTime: 100 }));
+    store.recordLog(makeEntry({ responseTime: 200 }));
 
     const metrics = store.getMetrics();
     expect(metrics.totalRequests).toBe(2);
@@ -32,7 +33,7 @@ describe("MetricsStore", () => {
 
   it("should enforce ring buffer max size", () => {
     for (let i = 0; i < 10; i++) {
-      store.addLog(makeEntry({ responseTime: i * 10 }));
+      store.recordLog(makeEntry({ responseTime: i * 10 }));
     }
     const metrics = store.getMetrics();
     expect(metrics.totalRequests).toBe(10);
@@ -41,10 +42,10 @@ describe("MetricsStore", () => {
   });
 
   it("should track status codes", () => {
-    store.addLog(makeEntry({ statusCode: 200 }));
-    store.addLog(makeEntry({ statusCode: 200 }));
-    store.addLog(makeEntry({ statusCode: 404 }));
-    store.addLog(makeEntry({ statusCode: 500 }));
+    store.recordLog(makeEntry({ statusCode: 200 }));
+    store.recordLog(makeEntry({ statusCode: 200 }));
+    store.recordLog(makeEntry({ statusCode: 404 }));
+    store.recordLog(makeEntry({ statusCode: 500 }));
 
     const metrics = store.getMetrics();
     expect(metrics.statusCodes[200]).toBe(2);
@@ -53,10 +54,10 @@ describe("MetricsStore", () => {
   });
 
   it("should track per-route stats", () => {
-    store.addLog(
+    store.recordLog(
       makeEntry({ method: "GET", path: "/api/users", responseTime: 100 }),
     );
-    store.addLog(
+    store.recordLog(
       makeEntry({ method: "GET", path: "/api/users", responseTime: 200 }),
     );
 
@@ -68,8 +69,7 @@ describe("MetricsStore", () => {
   });
 
   it("should track slow requests in route stats", () => {
-    store.addLog(makeEntry({ path: "/api/slow", slow: true }));
-    store.recordSlowRequest();
+    store.recordLog(makeEntry({ path: "/api/slow", slow: true }));
 
     const metrics = store.getMetrics();
     expect(metrics.slowRequests).toBe(1);
@@ -88,7 +88,7 @@ describe("MetricsStore", () => {
   });
 
   it("should reset all metrics", () => {
-    store.addLog(makeEntry());
+    store.recordLog(makeEntry());
     store.recordCacheHit();
     store.recordSlowRequest();
     store.reset();
@@ -106,7 +106,7 @@ describe("MetricsStore", () => {
   });
 
   it("should track global and per-route high query requests (N+1)", () => {
-    store.addLog(makeEntry({ path: "/api/posts", highQueries: true }));
+    store.recordLog(makeEntry({ path: "/api/posts", highQueries: true }));
     const metrics = store.getMetrics();
     expect(metrics.highQueryRequests).toBe(1);
     expect(metrics.routes["GET /api/posts"].highQueryCount).toBe(1);

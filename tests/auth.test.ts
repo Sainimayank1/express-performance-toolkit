@@ -66,7 +66,7 @@ describe("Dashboard Authentication", () => {
     const toolkit = performanceToolkit({
       dashboard: {
         enabled: true,
-        auth: undefined,
+        auth: null as any,
       },
     });
 

@@ -21,6 +21,7 @@ describe("Smart Insights Engine", () => {
       rss: 100,
       heapTotal: 200,
       heapUsed: 50,
+      heapLimit: 1000,
       external: 10,
     },
     statusCodes: { 200: 10 },

@@ -22,11 +22,12 @@ export function createDashboardRouter(
   const router = Router();
 
   // Default auth settings if none provided (Security by default)
-  const auth = options.auth || {
+  // To explicitly disable auth, pass auth: null or a falsy value in the config
+  const auth = options.auth === null ? null : (options.auth || {
     username: "admin",
     password: "perf-toolkit",
     secret: "toolkit-secret",
-  };
+  });
 
   const mountPath = options.path || "/__perf";
 
