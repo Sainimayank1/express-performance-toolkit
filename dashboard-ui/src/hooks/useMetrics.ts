@@ -5,6 +5,7 @@ export interface RouteStats {
   totalTime: number;
   slowCount: number;
   highQueryCount: number;
+  rateLimitHits: number;
   avgTime: number;
 }
 
@@ -26,6 +27,7 @@ export interface MetricsData {
   avgResponseTime: number;
   slowRequests: number;
   highQueryRequests: number;
+  rateLimitHits: number;
   cacheHits: number;
   cacheMisses: number;
   cacheHitRate: number;

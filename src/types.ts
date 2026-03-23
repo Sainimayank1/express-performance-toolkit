@@ -67,6 +67,21 @@ export interface DashboardOptions {
   path?: string;
 }
 
+export interface RateLimitOptions {
+  /** Enable rate limiting (default: false) */
+  enabled?: boolean;
+  /** Time window in milliseconds (default: 60000 - 1 minute) */
+  windowMs?: number;
+  /** Maximum number of requests per windowMs (default: 100) */
+  max?: number;
+  /** Response status code (default: 429) */
+  statusCode?: number;
+  /** Response message string or object */
+  message?: string | object;
+  /** URL patterns to exclude from rate limiting (e.g. ['/__perf*']) */
+  exclude?: (string | RegExp)[];
+}
+
 export interface ToolkitOptions {
   /** Cache configuration — pass true for defaults or an object to customize */
   cache?: boolean | CacheOptions;
@@ -78,6 +93,8 @@ export interface ToolkitOptions {
   queryHelper?: boolean | QueryHelperOptions;
   /** Performance dashboard */
   dashboard?: boolean | DashboardOptions;
+  /** Rate limiting */
+  rateLimit?: boolean | RateLimitOptions;
   /** Max log entries to keep in memory (default: 1000) */
   maxLogs?: number;
 }
@@ -99,11 +116,19 @@ export interface LogEntry {
   ip?: string;
 }
 
+export interface BlockedEvent {
+  ip: string;
+  path: string;
+  timestamp: number;
+  method: string;
+}
+
 export interface RouteStats {
   count: number;
   totalTime: number;
   slowCount: number;
   highQueryCount: number;
+  rateLimitHits: number;
   avgTime: number;
 }
 
@@ -113,6 +138,7 @@ export interface Metrics {
   avgResponseTime: number;
   slowRequests: number;
   highQueryRequests: number;
+  rateLimitHits: number;
   cacheHits: number;
   cacheMisses: number;
   cacheHitRate: number;
@@ -127,6 +153,7 @@ export interface Metrics {
   statusCodes: Record<number, number>;
   routes: Record<string, RouteStats>;
   recentLogs: LogEntry[];
+  blockedEvents: BlockedEvent[];
 }
 
 export interface CacheEntry {

@@ -4,6 +4,7 @@ import { createCacheMiddleware, LRUCache } from "./cache";
 import { createCompressionMiddleware } from "./compression";
 import { createLoggerMiddleware } from "./logger";
 import { createQueryHelperMiddleware } from "./queryHelper";
+import { createRateLimiter } from "./rateLimit";
 import { createDashboardRouter } from "./dashboard/dashboardRouter";
 import {
   ToolkitOptions,
@@ -11,6 +12,7 @@ import {
   CompressionOptions,
   LoggerOptions,
   QueryHelperOptions,
+  RateLimitOptions,
   DashboardOptions,
   Metrics,
   CacheMiddleware,
@@ -62,6 +64,25 @@ export function performanceToolkit(
   ) => void)[] = [];
   let cacheMiddlewareInstance: CacheMiddleware | null = null;
 
+  // ── Dashboard Config ─────────────────────────────────────
+  const dashboardConfig = normalizeOption<DashboardOptions>(options.dashboard, {
+    enabled: true,
+  });
+  const dashboardExcludePath = dashboardConfig.path || "/__perf";
+
+  // ── Rate Limiter ─────────────────────────────────────────
+  const rateLimitConfig = normalizeOption<RateLimitOptions>(options.rateLimit, {
+    enabled: false,
+  });
+  if (rateLimitConfig.enabled !== false) {
+    // Automatically exclude dashboard from rate limiting to prevent UI lockouts
+    rateLimitConfig.exclude = [
+      ...(rateLimitConfig.exclude || []),
+      dashboardExcludePath,
+    ];
+    middlewares.push(createRateLimiter(store, rateLimitConfig));
+  }
+
   // ── Compression ──────────────────────────────────────────
   const compressionConfig = normalizeOption<CompressionOptions>(
     options.compression,
@@ -97,13 +118,9 @@ export function performanceToolkit(
   }
 
   // ── Dashboard Router ─────────────────────────────────────
-  const dashboardConfig = normalizeOption<DashboardOptions>(options.dashboard, {
-    enabled: true,
-  });
-  const dashboardPath = dashboardConfig.path || "/";
   const dashboardRouter = createDashboardRouter(store, {
     ...dashboardConfig,
-    path: dashboardPath,
+    path: "/", // Always serve at the root of the provided router
   });
 
   // ── Composed Middleware ──────────────────────────────────
@@ -141,9 +158,6 @@ export function performanceToolkit(
 
 /**
  * Normalize a boolean | object option into a config object.
- * - `true` → defaults with enabled: true
- * - `false` → defaults with enabled: false
- * - object → merged with defaults
  */
 function normalizeOption<T extends { enabled?: boolean }>(
   value: boolean | T | undefined,
@@ -162,5 +176,6 @@ export { LRUCache, createCacheMiddleware } from "./cache";
 export { createCompressionMiddleware } from "./compression";
 export { createLoggerMiddleware } from "./logger";
 export { createQueryHelperMiddleware } from "./queryHelper";
+export { createRateLimiter } from "./rateLimit";
 export { createDashboardRouter } from "./dashboard/dashboardRouter";
 export * from "./types";

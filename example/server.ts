@@ -22,6 +22,11 @@ const toolkit = performanceToolkit({
   queryHelper: {
     threshold: 5,
   },
+  rateLimit: {
+    enabled: true,
+    windowMs: 15 * 60 * 1000, // 15 minutes window
+    max: 10, // 10 requests per window
+  },
   dashboard: true,
 });
 
@@ -63,6 +68,13 @@ app.get("/api/slow", (_req: Request, res: Response) => {
       processingTime: "1500ms",
     });
   }, 1500);
+});
+
+// Mock brute-force endpoint
+app.get("/api/bruteforce", (_req: Request, res: Response) => {
+  res.json({
+    message: "Try hammering this endpoint! See rate limit in action.",
+  });
 });
 
 // Medium-speed route

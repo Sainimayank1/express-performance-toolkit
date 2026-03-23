@@ -8,12 +8,14 @@ import { monitorEventLoopDelay } from "perf_hooks";
 export class MetricsStore {
   private maxLogs: number;
   private logs: LogEntry[];
+  private blockedEvents: any[] = []; // Using any internally for simplicity or import BlockedEvent
   private histogram: ReturnType<typeof monitorEventLoopDelay>;
   private stats: {
     totalRequests: number;
     totalResponseTime: number;
     slowRequests: number;
     highQueryRequests: number;
+    rateLimitHits: number;
     cacheHits: number;
     cacheMisses: number;
     cacheSize: number;
@@ -30,6 +32,7 @@ export class MetricsStore {
       totalResponseTime: 0,
       slowRequests: 0,
       highQueryRequests: 0,
+      rateLimitHits: 0,
       cacheHits: 0,
       cacheMisses: 0,
       cacheSize: 0,
@@ -69,6 +72,7 @@ export class MetricsStore {
         totalTime: 0,
         slowCount: 0,
         highQueryCount: 0,
+        rateLimitHits: 0,
         avgTime: 0,
       };
     }
@@ -87,6 +91,35 @@ export class MetricsStore {
 
   recordSlowRequest(): void {
     this.stats.slowRequests++;
+  }
+
+  recordRateLimitHit(routeKey: string, ip: string, method: string, path: string): void {
+    this.stats.rateLimitHits++;
+    
+    // Track blocked event details
+    this.blockedEvents.push({
+      ip,
+      path,
+      method,
+      timestamp: Date.now()
+    });
+
+    // Keep only last 100 blocked events
+    if (this.blockedEvents.length > 100) {
+      this.blockedEvents.shift();
+    }
+
+    if (!this.stats.routes[routeKey]) {
+      this.stats.routes[routeKey] = {
+        count: 0,
+        totalTime: 0,
+        slowCount: 0,
+        highQueryCount: 0,
+        rateLimitHits: 0,
+        avgTime: 0,
+      };
+    }
+    this.stats.routes[routeKey].rateLimitHits++;
   }
 
   recordCacheHit(): void {
@@ -120,6 +153,7 @@ export class MetricsStore {
       avgResponseTime,
       slowRequests: this.stats.slowRequests,
       highQueryRequests: this.stats.highQueryRequests,
+      rateLimitHits: this.stats.rateLimitHits,
       cacheHits: this.stats.cacheHits,
       cacheMisses: this.stats.cacheMisses,
       cacheHitRate,
@@ -129,6 +163,7 @@ export class MetricsStore {
       statusCodes: { ...this.stats.statusCodes },
       routes: { ...this.stats.routes },
       recentLogs: this.logs.slice(-100),
+      blockedEvents: [...this.blockedEvents],
     };
   }
 
@@ -139,12 +174,14 @@ export class MetricsStore {
     this.stats.totalResponseTime = 0;
     this.stats.slowRequests = 0;
     this.stats.highQueryRequests = 0;
+    this.stats.rateLimitHits = 0;
     this.stats.cacheHits = 0;
     this.stats.cacheMisses = 0;
     this.stats.cacheSize = 0;
     this.stats.statusCodes = {};
     this.stats.routes = {};
     this.stats.startTime = Date.now();
+    this.blockedEvents = [];
     this.histogram.disable();
     this.histogram = monitorEventLoopDelay({ resolution: 10 });
     this.histogram.enable();
