@@ -1,10 +1,10 @@
-import { Request, Response, NextFunction, Router } from 'express';
-import { MetricsStore } from './store';
-import { createCacheMiddleware, LRUCache } from './cache';
-import { createCompressionMiddleware } from './compression';
-import { createLoggerMiddleware } from './logger';
-import { createQueryHelperMiddleware } from './queryHelper';
-import { createDashboardRouter } from './dashboard/dashboardRouter';
+import { Request, Response, NextFunction, Router } from "express";
+import { MetricsStore } from "./store";
+import { createCacheMiddleware, LRUCache } from "./cache";
+import { createCompressionMiddleware } from "./compression";
+import { createLoggerMiddleware } from "./logger";
+import { createQueryHelperMiddleware } from "./queryHelper";
+import { createDashboardRouter } from "./dashboard/dashboardRouter";
 import {
   ToolkitOptions,
   CacheOptions,
@@ -14,7 +14,7 @@ import {
   DashboardOptions,
   Metrics,
   CacheMiddleware,
-} from './types';
+} from "./types";
 
 export interface ToolkitInstance {
   /** The composed Express middleware */
@@ -50,44 +50,68 @@ export interface ToolkitInstance {
  * app.use('/__perf', toolkit.dashboardRouter);
  * ```
  */
-export function performanceToolkit(options: ToolkitOptions = {}): ToolkitInstance {
+export function performanceToolkit(
+  options: ToolkitOptions = {},
+): ToolkitInstance {
   const store = new MetricsStore({ maxLogs: options.maxLogs || 1000 });
 
-  const middlewares: ((req: Request, res: Response, next: NextFunction) => void)[] = [];
+  const middlewares: ((
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ) => void)[] = [];
   let cacheMiddlewareInstance: CacheMiddleware | null = null;
 
   // ── Compression ──────────────────────────────────────────
-  const compressionConfig = normalizeOption<CompressionOptions>(options.compression, { enabled: true });
+  const compressionConfig = normalizeOption<CompressionOptions>(
+    options.compression,
+    { enabled: true },
+  );
   if (compressionConfig.enabled !== false) {
     middlewares.push(createCompressionMiddleware(compressionConfig));
   }
 
   // ── Query Helper ─────────────────────────────────────────
-  const queryConfig = normalizeOption<QueryHelperOptions>(options.queryHelper, { enabled: false });
+  const queryConfig = normalizeOption<QueryHelperOptions>(options.queryHelper, {
+    enabled: false,
+  });
   if (queryConfig.enabled !== false) {
     middlewares.push(createQueryHelperMiddleware(queryConfig));
   }
 
   // ── Logger (slow request detection) ──────────────────────
-  const loggerConfig = normalizeOption<LoggerOptions>(options.logSlowRequests, { enabled: true });
+  const loggerConfig = normalizeOption<LoggerOptions>(options.logSlowRequests, {
+    enabled: true,
+  });
   if (loggerConfig.enabled !== false) {
     middlewares.push(createLoggerMiddleware(loggerConfig, store));
   }
 
   // ── Cache ────────────────────────────────────────────────
-  const cacheConfig = normalizeOption<CacheOptions>(options.cache, { enabled: false });
+  const cacheConfig = normalizeOption<CacheOptions>(options.cache, {
+    enabled: false,
+  });
   if (cacheConfig.enabled !== false) {
     cacheMiddlewareInstance = createCacheMiddleware(cacheConfig, store);
     middlewares.push(cacheMiddlewareInstance);
   }
 
   // ── Dashboard Router ─────────────────────────────────────
-  const dashboardConfig = normalizeOption<DashboardOptions>(options.dashboard, { enabled: true });
-  const dashboardPath = dashboardConfig.path || '/__perf';
-  const dashboardRouter = createDashboardRouter(store, dashboardConfig);
+  const dashboardConfig = normalizeOption<DashboardOptions>(options.dashboard, {
+    enabled: true,
+  });
+  const dashboardPath = dashboardConfig.path || "/";
+  const dashboardRouter = createDashboardRouter(store, {
+    ...dashboardConfig,
+    path: dashboardPath,
+  });
 
   // ── Composed Middleware ──────────────────────────────────
-  function composedMiddleware(req: Request, res: Response, next: NextFunction): void {
+  function composedMiddleware(
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ): void {
     let index = 0;
 
     function runNext(err?: unknown): void {
@@ -123,19 +147,20 @@ export function performanceToolkit(options: ToolkitOptions = {}): ToolkitInstanc
  */
 function normalizeOption<T extends { enabled?: boolean }>(
   value: boolean | T | undefined,
-  defaults: T
+  defaults: T,
 ): T {
   if (value === true) return { ...defaults, enabled: true };
   if (value === false) return { ...defaults, enabled: false };
-  if (typeof value === 'object') return { ...defaults, ...value, enabled: true };
+  if (typeof value === "object")
+    return { ...defaults, ...value, enabled: true };
   return defaults;
 }
 
 // ── Re-exports ─────────────────────────────────────────────
-export { MetricsStore } from './store';
-export { LRUCache, createCacheMiddleware } from './cache';
-export { createCompressionMiddleware } from './compression';
-export { createLoggerMiddleware } from './logger';
-export { createQueryHelperMiddleware } from './queryHelper';
-export { createDashboardRouter } from './dashboard/dashboardRouter';
-export * from './types';
+export { MetricsStore } from "./store";
+export { LRUCache, createCacheMiddleware } from "./cache";
+export { createCompressionMiddleware } from "./compression";
+export { createLoggerMiddleware } from "./logger";
+export { createQueryHelperMiddleware } from "./queryHelper";
+export { createDashboardRouter } from "./dashboard/dashboardRouter";
+export * from "./types";

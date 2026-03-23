@@ -15,7 +15,7 @@ A powerful, all-in-one Express middleware that automatically optimizes your app 
 - 🔥 **Slow API Detection** — Flag & log requests exceeding response time thresholds
 - 🔍 **Query Optimization** — N+1 query detection with `req.perfToolkit.trackQuery()`
 - 📊 **Real-time Dashboard** — Beautiful dark-themed dashboard at `/__perf`
-- 📝 **Structured Logging** — Per-request timing, status codes, cache status
+- 📝 **Structured Logging** — Per-request timing, status codes, cache status, **and optional file-based logging**
 - 🎯 **Fully Typed** — Written in TypeScript with complete type definitions
 
 ---
@@ -31,8 +31,8 @@ npm install express-performance-toolkit
 ## 🚀 Quick Start
 
 ```typescript
-import express from 'express';
-import { performanceToolkit } from 'express-performance-toolkit';
+import express from "express";
+import { performanceToolkit } from "express-performance-toolkit";
 
 const app = express();
 
@@ -46,15 +46,15 @@ const toolkit = performanceToolkit({
 app.use(toolkit.middleware);
 
 // Mount the performance dashboard
-app.use('/__perf', toolkit.dashboardRouter);
+app.use("/__perf", toolkit.dashboardRouter);
 
-app.get('/api/users', (req, res) => {
-  res.json({ users: [{ id: 1, name: 'Alice' }] });
+app.get("/api/users", (req, res) => {
+  res.json({ users: [{ id: 1, name: "Alice" }] });
 });
 
 app.listen(3000, () => {
-  console.log('Server running on http://localhost:3000');
-  console.log('Dashboard at http://localhost:3000/__perf');
+  console.log("Server running on http://localhost:3000");
+  console.log("Dashboard at http://localhost:3000/__perf");
 });
 ```
 
@@ -66,40 +66,45 @@ app.listen(3000, () => {
 const toolkit = performanceToolkit({
   // Cache — boolean or CacheOptions
   cache: {
-    ttl: 60000,           // Cache TTL in ms (default: 60000)
-    maxSize: 100,         // Max LRU entries (default: 100)
-    methods: ['GET'],     // HTTP methods to cache (default: ['GET'])
-    exclude: ['/health', /^\/admin/], // URL patterns to skip
-    redis: {              // Optional Redis adapter (requires ioredis)
-      host: 'localhost',
+    ttl: 60000, // Cache TTL in ms (default: 60000)
+    maxSize: 100, // Max LRU entries (default: 100)
+    methods: ["GET"], // HTTP methods to cache (default: ['GET'])
+    exclude: ["/health", /^\/admin/], // URL patterns to skip
+    redis: {
+      // Optional Redis adapter (requires ioredis)
+      host: "localhost",
       port: 6379,
     },
   },
 
   // Compression — boolean or CompressionOptions
   compression: {
-    threshold: 1024,      // Min response size to compress (default: 1024 bytes)
-    level: 6,             // Compression level 1-9 (default: 6)
+    threshold: 1024, // Min response size to compress (default: 1024 bytes)
+    level: 6, // Compression level 1-9 (default: 6)
   },
 
   // Logger / Slow Detection — boolean or LoggerOptions
   logSlowRequests: {
-    slowThreshold: 1000,  // Flag requests slower than this (default: 1000ms)
-    console: true,        // Log to console (default: true)
-    formatter: (entry) => `${entry.method} ${entry.path} ${entry.responseTime}ms`,
+    slowThreshold: 1000, // Flag requests slower than this (default: 1000ms)
+    console: true, // Log to console (default: true)
+    file: "logs/perf.log", // Optional: Log all requests to a file (JSON Lines format)
+    rotation: true, // Optional: Daily log rotation (e.g. perf-2023-10-27.log)
+    maxDays: 7, // Optional: Auto-delete logs older than this (requires rotation)
+    formatter: (entry) =>
+      `${entry.method} ${entry.path} ${entry.responseTime}ms`,
   },
 
   // Query Helper — boolean or QueryHelperOptions
   queryHelper: {
-    threshold: 10,        // Warn after this many queries/request (default: 10)
+    threshold: 10, // Warn after this many queries/request (default: 10)
   },
 
   // Dashboard — boolean or DashboardOptions
   dashboard: {
-    path: '/__perf',      // Dashboard mount path (default: '/__perf')
+    path: "/__perf", // Dashboard mount path (default: '/__perf')
   },
 
-  maxLogs: 1000,          // Max log entries in memory (default: 1000)
+  maxLogs: 1000, // Max log entries in memory (default: 1000)
 });
 ```
 
@@ -130,7 +135,7 @@ POST /__perf/api/reset    → Reset all metrics
 Track database queries per request to detect N+1 patterns:
 
 ```typescript
-app.get('/api/posts', async (req, res) => {
+app.get("/api/posts", async (req, res) => {
   const posts = await db.getPosts();
 
   for (const post of posts) {
@@ -159,7 +164,7 @@ toolkit.resetMetrics();
 
 // Manual cache control
 toolkit.cache?.clear();
-toolkit.cache?.delete('GET:/api/users');
+toolkit.cache?.delete("GET:/api/users");
 ```
 
 ---
@@ -179,6 +184,7 @@ npx ts-node example/server.ts
 ```
 
 Then visit:
+
 - `http://localhost:3000/api/users` — fast, cached response
 - `http://localhost:3000/api/slow` — triggers slow request alert
 - `http://localhost:3000/__perf` — performance dashboard
@@ -218,6 +224,7 @@ express-performance-toolkit/
 We love open source! This package is public and open for anyone to use and improve. If you have ideas for new features, performance optimizations, or bug fixes, we highly encourage you to contribute!
 
 **How to contribute:**
+
 1. Fork the repository
 2. Create a new branch (`git checkout -b feature/amazing-feature`)
 3. Make your changes and add tests if applicable

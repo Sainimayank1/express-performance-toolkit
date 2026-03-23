@@ -43,6 +43,12 @@ export interface LoggerOptions {
   slowThreshold?: number;
   /** Log to console (default: true) */
   console?: boolean;
+  /** Log to file path (optional) */
+  file?: string;
+  /** Enable automatic daily log rotation (appends YYYY-MM-DD to filename) (default: false) */
+  rotation?: boolean;
+  /** Delete log files older than this many days (default: 7). Requires rotation: true */
+  maxDays?: number;
   /** Custom log formatter */
   formatter?: (entry: LogEntry) => string;
 }
