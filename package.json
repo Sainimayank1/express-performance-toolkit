@@ -5,12 +5,13 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "tsc",
+    "build:ui": "cd dashboard-ui && npm install && npm run build",
+    "build": "tsc && npm run build:ui",
     "postbuild": "npm run copy-assets",
-    "copy-assets": "mkdir -p dist/dashboard && cp src/dashboard/dashboard.html dist/dashboard/",
+    "copy-assets": "rm -rf dist/dashboard-ui && cp -R dashboard-ui/dist dist/dashboard-ui",
     "dev": "tsc --watch",
     "test": "jest --verbose",
-    "example": "ts-node example/server.ts",
+    "example": "npm run build && ts-node example/server.ts",
     "prepublishOnly": "npm run build"
   },
   "keywords": [
@@ -30,7 +31,9 @@
   "license": "MIT",
   "dependencies": {
     "compression": "^1.7.4",
-    "on-finished": "^2.4.1"
+    "lucide-react": "^0.577.0",
+    "on-finished": "^2.4.1",
+    "recharts": "^3.8.0"
   },
   "peerDependencies": {
     "express": ">=4.0.0"
