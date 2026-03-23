@@ -2,6 +2,7 @@ import { LogEntry, Metrics, RouteStats, BlockedEvent } from "./types";
 import { monitorEventLoopDelay } from "perf_hooks";
 import { analyzeMetrics } from "./analyzer";
 import * as v8 from "v8";
+import * as os from "os";
 
 /**
  * In-memory metrics store — shared state between all middleware components.
@@ -13,6 +14,8 @@ export class MetricsStore {
   private logs: LogEntry[];
   private blockedEvents: BlockedEvent[] = [];
   private histogram: ReturnType<typeof monitorEventLoopDelay>;
+  private lastCpuUsage: { user: number; system: number } | null = null;
+  private lastCpuTimestamp: number | null = null;
   private stats: {
     totalRequests: number;
     totalResponseTime: number;
@@ -174,6 +177,21 @@ export class MetricsStore {
       : 0;
   }
 
+  private formatUptime(ms: number): string {
+    const seconds = Math.floor(ms / 1000);
+    const d = Math.floor(seconds / (3600 * 24));
+    const h = Math.floor((seconds % (3600 * 24)) / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = Math.floor(seconds % 60);
+
+    const parts = [];
+    if (d > 0) parts.push(`${d}d`);
+    if (h > 0) parts.push(`${h}h`);
+    if (m > 0) parts.push(`${m}m`);
+    parts.push(`${s}s`);
+    return parts.join(" ");
+  }
+
   /** Get all metrics data for the dashboard. */
   getMetrics(): Metrics {
     const avgResponseTime =
@@ -209,6 +227,40 @@ export class MetricsStore {
         heapLimit: heapStats.heap_size_limit,
         external: mem.external,
       },
+      systemInfo: {
+        nodeVersion: process.version,
+        platform: os.platform(),
+        arch: os.arch(),
+        cpus: os.cpus().length,
+        hostname: os.hostname(),
+        totalMemory: os.totalmem(),
+        freeMemory: os.freemem(),
+        processId: process.pid,
+        uptimeFormatted: this.formatUptime(Date.now() - this.stats.startTime),
+      },
+      cpuUsage: (() => {
+        const cpu = process.cpuUsage();
+        const now = Date.now();
+        let percent = 0;
+
+        if (this.lastCpuUsage && this.lastCpuTimestamp) {
+          const userDiff = cpu.user - this.lastCpuUsage.user;
+          const sysDiff = cpu.system - this.lastCpuUsage.system;
+          const timeDiff = (now - this.lastCpuTimestamp) * 1000; // ms to microseconds
+          if (timeDiff > 0) {
+            percent = Math.min(100, Math.round(((userDiff + sysDiff) / timeDiff) * 100));
+          }
+        }
+
+        this.lastCpuUsage = cpu;
+        this.lastCpuTimestamp = now;
+
+        return {
+          user: cpu.user,
+          system: cpu.system,
+          percent,
+        };
+      })(),
       statusCodes: { ...this.stats.statusCodes },
       routes: { ...this.stats.routes },
       recentLogs: this.logs.slice(-100),

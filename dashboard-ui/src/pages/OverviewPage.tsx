@@ -24,7 +24,7 @@ export function OverviewPage({ data, history }: OverviewPageProps) {
       <KpiGrid data={data} />
       
       <div className="middle-grid">
-        <HealthCharts history={history} />
+        <HealthCharts history={history} systemInfo={data?.systemInfo} />
         <CachePanel data={data} />
       </div>
     </div>

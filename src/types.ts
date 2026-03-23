@@ -177,13 +177,29 @@ export interface MetricSnapshot {
     rss: number;
     heapTotal: number;
     heapUsed: number;
-    heapLimit: number; // Added v8 heap limit
+    heapLimit: number;
     external: number;
   };
   statusCodes: Record<number, number>;
   routes: Record<string, RouteStats>;
   recentLogs: LogEntry[];
   blockedEvents: BlockedEvent[];
+  systemInfo: {
+    nodeVersion: string;
+    platform: string;
+    arch: string;
+    cpus: number;
+    hostname: string;
+    totalMemory: number;
+    freeMemory: number;
+    processId: number;
+    uptimeFormatted: string;
+  };
+  cpuUsage: {
+    user: number;
+    system: number;
+    percent: number;
+  };
 }
 
 export interface Metrics {
@@ -205,13 +221,29 @@ export interface Metrics {
     rss: number;
     heapTotal: number;
     heapUsed: number;
-    heapLimit: number; // Added v8 heap limit
+    heapLimit: number;
     external: number;
   };
   statusCodes: Record<number, number>;
   routes: Record<string, RouteStats>;
   recentLogs: LogEntry[];
   blockedEvents: BlockedEvent[];
+  systemInfo: {
+    nodeVersion: string;
+    platform: string;
+    arch: string;
+    cpus: number;
+    hostname: string;
+    totalMemory: number;
+    freeMemory: number;
+    processId: number;
+    uptimeFormatted: string;
+  };
+  cpuUsage: {
+    user: number;
+    system: number;
+    percent: number;
+  };
 }
 
 export interface CacheEntry {

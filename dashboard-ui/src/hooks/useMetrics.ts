@@ -41,6 +41,7 @@ export interface HistoryData {
   time: string;
   lag: number;
   memory: number;
+  cpu: number;
 }
 
 export interface MetricsData {
@@ -62,7 +63,24 @@ export interface MetricsData {
     rss: number;
     heapTotal: number;
     heapUsed: number;
+    heapLimit: number;
     external: number;
+  };
+  systemInfo: {
+    nodeVersion: string;
+    platform: string;
+    arch: string;
+    cpus: number;
+    hostname: string;
+    totalMemory: number;
+    freeMemory: number;
+    processId: number;
+    uptimeFormatted: string;
+  };
+  cpuUsage: {
+    user: number;
+    system: number;
+    percent: number;
   };
   statusCodes: Record<number, number>;
   routes: Record<string, RouteStats>;
@@ -107,6 +125,7 @@ export function useMetrics(enabled: boolean = true) {
               time: timeStr,
               lag: metrics.eventLoopLag,
               memory: Math.round(metrics.memoryUsage.heapUsed / 1024 / 1024),
+              cpu: metrics.cpuUsage.percent,
             };
             return [...prev, newPoint].slice(-30);
           });

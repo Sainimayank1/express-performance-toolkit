@@ -8,6 +8,10 @@ interface SparklineProps {
   gradientId: string;
 }
 
+/** 
+ * A sleek, SVG-based sparkline that uses Bezier curves 
+ * for a smoother, more premium look.
+ */
 export function Sparkline({
   data,
   width = 300,
@@ -15,30 +19,35 @@ export function Sparkline({
   color,
   gradientId,
 }: SparklineProps) {
-  const points = useMemo(() => {
-    if (data.length === 0) return "";
+  const { linePath, areaPath } = useMemo(() => {
+    if (data.length < 2) return { linePath: "", areaPath: "" };
+    
     const max = Math.max(...data, 1);
     const min = 0;
     const range = max - min;
-
-    const xStep = width / (data.length - 1 || 1);
+    const xStep = width / (data.length - 1);
     
-    return data.map((val, i) => {
-      const x = i * xStep;
-      const y = height - ((val - min) / range) * height;
-      return `${x},${y}`;
-    }).join(" ");
+    const points = data.map((val, i) => ({
+      x: i * xStep,
+      y: height - ((val - min) / range) * height
+    }));
+
+    // Generate smooth curve using Bezier pathing
+    let d = `M ${points[0].x},${points[0].y}`;
+    
+    for (let i = 0; i < points.length - 1; i++) {
+      const curr = points[i];
+      const next = points[i + 1];
+      const cpX = (curr.x + next.x) / 2;
+      d += ` C ${cpX},${curr.y} ${cpX},${next.y} ${next.x},${next.y}`;
+    }
+
+    const a = `${d} L ${width},${height} L 0,${height} Z`;
+    
+    return { linePath: d, areaPath: a };
   }, [data, width, height]);
 
-  const areaPath = useMemo(() => {
-    if (!points) return "";
-    return `M 0,${height} L ${points} L ${width},${height} Z`;
-  }, [points, width, height]);
-
-  const linePath = useMemo(() => {
-    if (!points) return "";
-    return `M ${points}`;
-  }, [points]);
+  if (data.length < 2) return <div style={{ height, width: '100%' }} />;
 
   return (
     <svg
@@ -57,7 +66,7 @@ export function Sparkline({
       <path
         d={areaPath}
         fill={`url(#${gradientId})`}
-        style={{ transition: "d 0.3s ease" }}
+        style={{ transition: "d 0.3s ease-in-out" }}
       />
       <path
         d={linePath}
@@ -66,7 +75,7 @@ export function Sparkline({
         strokeWidth="2"
         strokeLinecap="round"
         strokeLinejoin="round"
-        style={{ transition: "d 0.3s ease" }}
+        style={{ transition: "d 0.3s ease-in-out" }}
       />
     </svg>
   );
