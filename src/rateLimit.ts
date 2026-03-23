@@ -36,9 +36,18 @@ export function createRateLimiter(
   }, windowMs).unref(); // .unref() ensures this interval doesn't keep the Node process alive
 
   const exclude = opts.exclude || [];
+  const limitMethods = opts.methods;
 
   return (req: Request, res: Response, next: NextFunction) => {
-    // Check exclusions
+    // 1. Method filtering (Default: Skip OPTIONS, limit everything else)
+    if (limitMethods) {
+      if (!limitMethods.includes(req.method)) return next();
+    } else if (req.method === "OPTIONS") {
+      // Security/Compatibility: Skip OPTIONS requests by default to avoid breaking CORS
+      return next();
+    }
+
+    // 2. Path exclusions
     const path = req.path;
     const isExcluded = exclude.some((pattern) => {
       if (typeof pattern === "string") return path.startsWith(pattern);
@@ -48,7 +57,10 @@ export function createRateLimiter(
 
     if (isExcluded) return next();
 
-    const ip = req.ip || req.connection.remoteAddress || "unknown";
+    let ip = req.ip || req.connection.remoteAddress || "unknown";
+    // Normalize IPv6 loopback to IPv4
+    if (ip === "::1" || ip === "::ffff:127.0.0.1") ip = "127.0.0.1";
+
     const now = Date.now();
     const routeKey = `${req.method} ${req.route ? req.route.path : req.path}`;
 

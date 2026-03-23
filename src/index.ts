@@ -126,6 +126,10 @@ export function performanceToolkit(
     middlewares.push(cacheMiddlewareInstance);
   }
 
+  if (dashboardConfig.enabled !== false) {
+    console.info(`[perf-toolkit] Dashboard available at: ${dashboardExcludePath}`);
+  }
+
   // ── Dashboard Router ─────────────────────────────────────
   const dashboardRouter = createDashboardRouter(store, {
     ...dashboardConfig,

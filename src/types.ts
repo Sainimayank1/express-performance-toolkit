@@ -93,6 +93,8 @@ export interface RateLimitOptions {
   message?: string | object;
   /** URL patterns to exclude from rate limiting (e.g. ['/__perf*']) */
   exclude?: (string | RegExp)[];
+  /** HTTP methods to rate limit (e.g. ['GET', 'POST']). If not provided, all methods except OPTIONS are limited. */
+  methods?: string[];
 }
 
 export interface ToolkitOptions {

@@ -54,4 +54,51 @@ describe('Smart Rate Limiter', () => {
     expect(metrics.blockedEvents[0].path).toBe('/api');
     expect(metrics.blockedEvents[0].method).toBe('GET');
   });
+
+  it('should skip OPTIONS requests by default', async () => {
+    const app = express();
+    const toolkit = performanceToolkit({
+      rateLimit: {
+        windowMs: 1000,
+        max: 1,
+      }
+    });
+
+    app.use(toolkit.middleware);
+    app.options('/api', (req, res) => { res.send('OK'); });
+    app.get('/api', (req, res) => { res.send('OK'); });
+
+    // 1st OPTIONS request - should be allowed
+    await request(app).options('/api').expect(200);
+    // 2nd OPTIONS request - should still be allowed (skip logic)
+    await request(app).options('/api').expect(200);
+    // 1st GET request - should be allowed
+    await request(app).get('/api').expect(200);
+    // 2nd GET request - should be blocked (max: 1)
+    await request(app).get('/api').expect(429);
+  });
+
+  it('should only rate limit specified methods', async () => {
+    const app = express();
+    const toolkit = performanceToolkit({
+      rateLimit: {
+        windowMs: 1000,
+        max: 1,
+        methods: ['POST']
+      }
+    });
+
+    app.use(toolkit.middleware);
+    app.get('/api', (req, res) => { res.send('GET OK'); });
+    app.post('/api', (req, res) => { res.send('POST OK'); });
+
+    // GET requests should not be limited
+    await request(app).get('/api').expect(200);
+    await request(app).get('/api').expect(200);
+    
+    // 1st POST request - should be allowed
+    await request(app).post('/api').expect(200);
+    // 2nd POST request - should be blocked
+    await request(app).post('/api').expect(429);
+  });
 });
