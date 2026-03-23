@@ -2,6 +2,7 @@
 
 A powerful, all-in-one Express middleware that automatically optimizes your app with **request caching**, **response compression**, **slow API detection**, **query optimization helpers**, and a stunning **real-time performance dashboard**.
 
+[![npm version](https://img.shields.io/npm/v/express-performance-toolkit.svg?style=flat-square)](https://www.npmjs.com/package/express-performance-toolkit)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.3-blue)](https://www.typescriptlang.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](./LICENSE)
 
@@ -209,6 +210,22 @@ express-performance-toolkit/
 ├── tsconfig.json
 └── jest.config.js
 ```
+
+---
+
+## 🤝 Contributing
+
+We love open source! This package is public and open for anyone to use and improve. If you have ideas for new features, performance optimizations, or bug fixes, we highly encourage you to contribute!
+
+**How to contribute:**
+1. Fork the repository
+2. Create a new branch (`git checkout -b feature/amazing-feature`)
+3. Make your changes and add tests if applicable
+4. Commit your changes (`git commit -m 'Add amazing feature'`)
+5. Push to the branch (`git push origin feature/amazing-feature`)
+6. Open a Pull Request!
+
+Every contribution helps make this toolkit better for the community. Let's build something awesome together! 🚀
 
 ---
 
