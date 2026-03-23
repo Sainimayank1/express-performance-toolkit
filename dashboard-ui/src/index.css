@@ -565,3 +565,88 @@ tr:hover td { background: rgba(255, 255, 255, 0.02); }
   font-size: 0.85rem;
   border: 1px solid rgba(244, 63, 94, 0.2);
 }
+
+/* --- Refined Multi-Page Styles --- */
+.nav-links {
+  display: flex;
+  gap: 0.5rem;
+  margin: 0 1.5rem;
+}
+
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.5rem 0.85rem;
+  border-radius: 8px;
+  color: var(--text-400);
+  background: transparent;
+  border: none;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+  white-space: nowrap;
+}
+
+.nav-link:hover {
+  color: var(--text-100);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.nav-link.active {
+  color: var(--accent-emerald);
+  background: rgba(16, 185, 129, 0.1);
+}
+
+.nav-link .badge {
+  position: absolute;
+  top: 2px;
+  right: -4px;
+  background: var(--accent-rose);
+  color: white;
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 0 5px;
+  border-radius: 10px;
+  min-width: 16px;
+  height: 16px;
+  line-height: 16px;
+  text-align: center;
+  box-shadow: 0 2px 4px rgba(244, 63, 94, 0.3);
+}
+
+.page-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.centered {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 160px);
+}
+
+.error-state {
+  text-align: center;
+  max-width: 500px;
+  padding: 3rem;
+}
+
+.uptime-mono, .lag-mono {
+  margin-left: 6px;
+  font-family: var(--font-mono);
+  font-weight: 600;
+}
+
+@media (max-width: 1024px) {
+  .nav-link span { display: none; }
+  .nav-links { gap: 0.25rem; margin: 0 0.5rem; }
+}
+
+@media (max-width: 768px) {
+  .nav-links { display: none; }
+}

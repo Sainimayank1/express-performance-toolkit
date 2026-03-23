@@ -1,20 +1,32 @@
 import { useState, useEffect } from "react";
-import { AlertTriangle, Zap, LogOut } from "lucide-react";
+import {
+  AlertTriangle,
+  Zap,
+  LogOut,
+  LayoutDashboard,
+  Route,
+  Bell,
+  Terminal,
+} from "lucide-react";
 import { useMetrics } from "./hooks/useMetrics";
 import { formatUptime } from "./utils/formatters";
-import { KpiGrid } from "./components/KpiGrid";
-import { HealthCharts } from "./components/HealthCharts";
-import { RoutesTable } from "./components/RoutesTable";
-import { CachePanel } from "./components/CachePanel";
-import { LiveLogs } from "./components/LiveLogs";
-import { InsightsPanel } from "./components/InsightsPanel";
 import { Login } from "./components/Login";
 
+// Pages
+import { OverviewPage } from "./pages/OverviewPage";
+import { RoutesPage } from "./pages/RoutesPage";
+import { InsightsPage } from "./pages/InsightsPage";
+import { LogsPage } from "./pages/LogsPage";
+
+type PageType = "overview" | "routes" | "insights" | "logs";
+
 export default function App() {
+  const [activePage, setActivePage] = useState<PageType>("overview");
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [isAuthRequired, setIsAuthRequired] = useState(false);
+
   const { data, history, error } = useMetrics(
-    isAuthenticated === true || (isAuthenticated !== null && !isAuthRequired)
+    isAuthenticated === true || (isAuthenticated !== null && !isAuthRequired),
   );
 
   const checkAuth = async () => {
@@ -42,7 +54,6 @@ export default function App() {
     checkAuth();
   }, []);
 
-  // Re-check auth if we get an Unauthorized error from metrics
   useEffect(() => {
     if (String(error) === "Unauthorized" && isAuthenticated !== false) {
       checkAuth();
@@ -55,36 +66,13 @@ export default function App() {
 
   if (error && String(error) !== "Unauthorized") {
     return (
-      <div
-        className="dashboard-wrapper"
-        style={{
-          justifyContent: "center",
-          alignItems: "center",
-          height: "100vh",
-        }}
-      >
-        <div
-          className="panel"
-          style={{ padding: "3rem", textAlign: "center", maxWidth: "500px" }}
-        >
-          <AlertTriangle
-            size={48}
-            color="var(--accent-rose)"
-            style={{ margin: "0 auto 1rem" }}
-          />
-          <h2
-            style={{
-              fontFamily: "var(--font-display)",
-              fontSize: "1.5rem",
-              marginBottom: "1rem",
-              color: "var(--text-100)",
-            }}
-          >
-            Connection Lost
-          </h2>
-          <p style={{ color: "var(--text-400)" }}>
+      <div className="dashboard-wrapper centered">
+        <div className="panel error-state">
+          <AlertTriangle size={48} color="var(--accent-rose)" />
+          <h2>Connection Lost</h2>
+          <p>
             Unable to connect to the Performance API. Ensure your Express server
-            is running and the toolkit is correctly configured.
+            is running.
           </p>
         </div>
       </div>
@@ -96,10 +84,29 @@ export default function App() {
       <div className="dashboard-wrapper empty-state">Connecting to API...</div>
     );
 
+  const renderPage = () => {
+    switch (activePage) {
+      case "overview":
+        return <OverviewPage data={data} history={history} />;
+      case "routes":
+        return <RoutesPage data={data} />;
+      case "insights":
+        return <InsightsPage data={data} />;
+      case "logs":
+        return <LogsPage data={data} />;
+      default:
+        return <OverviewPage data={data} history={history} />;
+    }
+  };
+
   return (
     <>
       <nav className="navbar animate-in">
-        <div className="brand">
+        <div
+          className="brand"
+          onClick={() => setActivePage("overview")}
+          style={{ cursor: "pointer" }}
+        >
           <div className="brand-icon">
             <Zap size={18} />
           </div>
@@ -107,20 +114,47 @@ export default function App() {
             Express <span>Performance</span> Toolkit
           </div>
         </div>
+
+        <div className="nav-links">
+          <button
+            className={`nav-link ${activePage === "overview" ? "active" : ""}`}
+            onClick={() => setActivePage("overview")}
+          >
+            <LayoutDashboard size={16} /> Overview
+          </button>
+          <button
+            className={`nav-link ${activePage === "routes" ? "active" : ""}`}
+            onClick={() => setActivePage("routes")}
+          >
+            <Route size={16} /> Routes
+          </button>
+          <button
+            className={`nav-link ${activePage === "insights" ? "active" : ""}`}
+            onClick={() => setActivePage("insights")}
+          >
+            <Bell size={16} /> Insights
+            {data.insights.length > 0 && (
+              <span className="badge">{data.insights.length}</span>
+            )}
+          </button>
+          <button
+            className={`nav-link ${activePage === "logs" ? "active" : ""}`}
+            onClick={() => setActivePage("logs")}
+          >
+            <Terminal size={16} /> Logs
+          </button>
+        </div>
+
         <div className="nav-actions">
-          <div className="live-indicator">
+          <div className="live-indicator hide-mobile">
             <div className="pulse-dot"></div> Live
-            <span style={{ marginLeft: "8px", fontFamily: "var(--font-mono)" }}>
-              {formatUptime(data.uptime)}
-            </span>
+            <span className="uptime-mono">{formatUptime(data.uptime)}</span>
           </div>
           <div className="live-indicator">
             <span>Lag</span>
             <span
+              className="lag-mono"
               style={{
-                marginLeft: "4px",
-                fontFamily: "var(--font-mono)",
-                fontWeight: 600,
                 color:
                   data.eventLoopLag > 100
                     ? "var(--accent-rose)"
@@ -130,45 +164,19 @@ export default function App() {
               {data.eventLoopLag}ms
             </span>
           </div>
-          <div className="live-indicator">
-            <span>RAM</span>
-            <span
-              style={{
-                marginLeft: "4px",
-                fontFamily: "var(--font-mono)",
-                fontWeight: 600,
-                color: "var(--text-100)",
-              }}
-            >
-              {Math.round(data.memoryUsage.heapUsed / 1024 / 1024)}MB
-            </span>
-          </div>
           {isAuthRequired && (
-            <button className="nav-btn" onClick={handleLogout} title="Logout">
+            <button
+              className="nav-btn logout-btn"
+              onClick={handleLogout}
+              title="Logout"
+            >
               <LogOut size={16} />
             </button>
           )}
         </div>
       </nav>
 
-      <div className="dashboard-wrapper">
-        <KpiGrid data={data} />
-
-        <InsightsPanel insights={data.insights} />
-
-        <div className="middle-grid">
-          <RoutesTable routes={data.routes} />
-
-          <div
-            style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}
-          >
-            <HealthCharts history={history} />
-            <CachePanel data={data} />
-          </div>
-        </div>
-
-        <LiveLogs logs={data.recentLogs} />
-      </div>
+      <div className="dashboard-wrapper">{renderPage()}</div>
     </>
   );
 }
