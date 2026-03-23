@@ -152,11 +152,20 @@ export function createLoggerMiddleware(
     const originalWrite = res.write;
     const originalEnd = res.end;
 
-    res.write = function (chunk: any, encoding?: any, _callback?: any): boolean {
+    res.write = function (
+      chunk: any,
+      encoding?: any,
+      _callback?: any,
+    ): boolean {
       if (chunk) {
         bytesSent += Buffer.isBuffer(chunk)
           ? chunk.length
-          : Buffer.byteLength(chunk, (typeof encoding === "string" ? encoding : "utf8") as BufferEncoding);
+          : Buffer.byteLength(
+              chunk,
+              (typeof encoding === "string"
+                ? encoding
+                : "utf8") as BufferEncoding,
+            );
       }
       return originalWrite.apply(res, arguments as any);
     };
@@ -165,7 +174,12 @@ export function createLoggerMiddleware(
       if (chunk && typeof chunk !== "function") {
         bytesSent += Buffer.isBuffer(chunk)
           ? chunk.length
-          : Buffer.byteLength(chunk, (typeof encoding === "string" ? encoding : "utf8") as BufferEncoding);
+          : Buffer.byteLength(
+              chunk,
+              (typeof encoding === "string"
+                ? encoding
+                : "utf8") as BufferEncoding,
+            );
       }
       return originalEnd.apply(res, arguments as any);
     };
@@ -185,9 +199,13 @@ export function createLoggerMiddleware(
       const responseTime = Date.now() - startTime;
       const isSlow = responseTime >= slowThreshold;
 
+      // Extract route pattern if available (e.g. /users/:id)
+      const routePattern = (req as any).route?.path;
+
       const entry: LogEntry = {
         method: req.method,
-        path: req.originalUrl || req.url,
+        path: reqPath,
+        routePattern,
         statusCode: finishedRes.statusCode,
         responseTime,
         timestamp: Date.now(),
@@ -201,7 +219,7 @@ export function createLoggerMiddleware(
       };
 
       // Record in store
-      store.recordLog(entry as any); // Cast because Omit/& types can be tricky with interfaces
+      store.recordLog(entry);
 
       if (isSlow) {
         store.recordSlowRequest();

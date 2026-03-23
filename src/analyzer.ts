@@ -64,11 +64,11 @@ export function analyzeMetrics(metrics: Metrics): Insight[] {
     });
   }
 
-  if (metrics.memoryUsage.heapUsed > metrics.memoryUsage.heapTotal * 0.8) {
+  if (metrics.memoryUsage.heapUsed > metrics.memoryUsage.heapLimit * 0.8) {
     insights.push({
       type: "warning",
       title: "High Memory Pressure",
-      message: "Node.js heap usage is above 80%.",
+      message: "Node.js heap usage is above 80% of total limit.",
       action:
         "Monitor for memory leaks or increase memory limit (--max-old-space-size).",
     });

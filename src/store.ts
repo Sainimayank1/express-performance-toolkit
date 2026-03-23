@@ -1,5 +1,7 @@
-import { LogEntry, Metrics, RouteStats } from "./types";
+import { LogEntry, Metrics, RouteStats, BlockedEvent } from "./types";
 import { monitorEventLoopDelay } from "perf_hooks";
+import { analyzeMetrics } from "./analyzer";
+import * as v8 from "v8";
 
 /**
  * In-memory metrics store — shared state between all middleware components.
@@ -7,8 +9,9 @@ import { monitorEventLoopDelay } from "perf_hooks";
  */
 export class MetricsStore {
   private maxLogs: number;
+  private maxRoutes: number = 200; // Cap unique routes to prevent memory leaks
   private logs: LogEntry[];
-  private blockedEvents: any[] = []; // Using any internally for simplicity or import BlockedEvent
+  private blockedEvents: BlockedEvent[] = [];
   private histogram: ReturnType<typeof monitorEventLoopDelay>;
   private stats: {
     totalRequests: number;
@@ -47,11 +50,8 @@ export class MetricsStore {
   }
 
   /** Add a request log entry to the ring buffer. */
-  recordLog(log: Omit<LogEntry, "bytesSent"> & { bytesSent: number }): void {
-    this.logs.push({
-      ...log,
-      timestamp: log.timestamp || Date.now(),
-    });
+  recordLog(log: LogEntry): void {
+    this.logs.push(log);
 
     // Ring buffer — drop oldest entries when full
     if (this.logs.length > this.maxLogs) {
@@ -66,21 +66,44 @@ export class MetricsStore {
     this.stats.totalBytesSent += log.bytesSent;
 
     // Track per-route stats
-    const routeKey = `${log.method} ${log.path}`;
+    // Use normalized path (routePattern) if available, fallback to actual path
+    const routeKey = `${log.method} ${log.routePattern || log.path}`;
+    
     if (!this.stats.routes[routeKey]) {
-      this.stats.routes[routeKey] = {
-        count: 0,
-        totalTime: 0,
-        slowCount: 0,
-        highQueryCount: 0,
-        rateLimitHits: 0,
-        avgTime: 0,
-        totalBytes: 0,
-        avgSize: 0,
-      };
+      // Prevent unbounded growth of the routes map
+      if (Object.keys(this.stats.routes).length >= this.maxRoutes) {
+        // Fallback to a catch-all for excessive new routes
+        const othersKey = `${log.method} [Other]`;
+        if (!this.stats.routes[othersKey]) {
+          this.stats.routes[othersKey] = this.createNewRouteStats();
+        }
+        this.updateRouteStats(this.stats.routes[othersKey], log);
+      } else {
+        this.stats.routes[routeKey] = this.createNewRouteStats();
+        this.updateRouteStats(this.stats.routes[routeKey], log);
+      }
+    } else {
+      this.updateRouteStats(this.stats.routes[routeKey], log);
     }
 
-    const route = this.stats.routes[routeKey];
+    const code = log.statusCode;
+    this.stats.statusCodes[code] = (this.stats.statusCodes[code] || 0) + 1;
+  }
+
+  private createNewRouteStats(): RouteStats {
+    return {
+      count: 0,
+      totalTime: 0,
+      slowCount: 0,
+      highQueryCount: 0,
+      rateLimitHits: 0,
+      avgTime: 0,
+      totalBytes: 0,
+      avgSize: 0,
+    };
+  }
+
+  private updateRouteStats(route: RouteStats, log: LogEntry): void {
     route.count++;
     route.totalTime += log.responseTime;
     route.totalBytes += log.bytesSent;
@@ -96,9 +119,6 @@ export class MetricsStore {
       this.stats.highQueryRequests++;
       route.highQueryCount++;
     }
-
-    const code = log.statusCode;
-    this.stats.statusCodes[code] = (this.stats.statusCodes[code] || 0) + 1;
   }
 
   recordSlowRequest(): void {
@@ -127,16 +147,10 @@ export class MetricsStore {
     }
 
     if (!this.stats.routes[routeKey]) {
-      this.stats.routes[routeKey] = {
-        count: 0,
-        totalTime: 0,
-        slowCount: 0,
-        highQueryCount: 0,
-        rateLimitHits: 0,
-        avgTime: 0,
-        totalBytes: 0,
-        avgSize: 0,
-      };
+      if (Object.keys(this.stats.routes).length >= this.maxRoutes) {
+        return; // Don't track rate limits for new routes if at capacity
+      }
+      this.stats.routes[routeKey] = this.createNewRouteStats();
     }
     this.stats.routes[routeKey].rateLimitHits++;
   }
@@ -168,6 +182,7 @@ export class MetricsStore {
         : 0;
 
     const mem = process.memoryUsage();
+    const heapStats = v8.getHeapStatistics();
 
     const metrics: Metrics = {
       uptime: Date.now() - this.stats.startTime,
@@ -191,6 +206,7 @@ export class MetricsStore {
         rss: mem.rss,
         heapTotal: mem.heapTotal,
         heapUsed: mem.heapUsed,
+        heapLimit: heapStats.heap_size_limit,
         external: mem.external,
       },
       statusCodes: { ...this.stats.statusCodes },
@@ -200,7 +216,6 @@ export class MetricsStore {
     };
 
     // Generate insights
-    const { analyzeMetrics } = require("./analyzer");
     metrics.insights = analyzeMetrics(metrics);
 
     return metrics;

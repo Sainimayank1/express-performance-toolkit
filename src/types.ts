@@ -115,10 +115,11 @@ export interface ToolkitOptions {
 export interface LogEntry {
   method: string;
   path: string;
+  routePattern?: string;
   statusCode: number;
   responseTime: number;
   timestamp: number;
-  bytesSent?: number; // Added bandwidth field
+  bytesSent: number;
   slow: boolean;
   cached: boolean;
   queryCount?: number;
@@ -172,6 +173,7 @@ export interface MetricSnapshot {
     rss: number;
     heapTotal: number;
     heapUsed: number;
+    heapLimit: number; // Added v8 heap limit
     external: number;
   };
   statusCodes: Record<number, number>;
@@ -199,6 +201,7 @@ export interface Metrics {
     rss: number;
     heapTotal: number;
     heapUsed: number;
+    heapLimit: number; // Added v8 heap limit
     external: number;
   };
   statusCodes: Record<number, number>;
