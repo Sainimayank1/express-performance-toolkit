@@ -1,6 +1,6 @@
 # ⚡ Express Performance Toolkit
 
-A powerful, all-in-one Express middleware that automatically optimizes your app with **request caching**, **response compression**, **slow API detection**, **query optimization helpers**, and a stunning **real-time performance dashboard**.
+A powerful, all-in-one Express middleware that automatically optimizes your app with **request caching**, **response compression**, **smart rate limiting**, **bandwidth tracking**, **slow API detection**, **query optimization helpers**, and a stunning **real-time modular performance dashboard**.
 
 [![npm version](https://img.shields.io/npm/v/express-performance-toolkit.svg?style=flat-square)](https://www.npmjs.com/package/express-performance-toolkit)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.3-blue)](https://www.typescriptlang.org/)
@@ -12,10 +12,14 @@ A powerful, all-in-one Express middleware that automatically optimizes your app 
 
 - 🚀 **Request Caching** — In-memory LRU cache with TTL (+ optional Redis adapter)
 - 🗜️ **Response Compression** — Gzip/deflate with configurable thresholds
+- 🛡️ **Smart Rate Limiting** — Protect your API with IP-based limits and blocked traffic tracking
+- 📉 **Bandwidth Monitoring** — Real-time tracking of network egress and payload sizes
 - 🔥 **Slow API Detection** — Flag & log requests exceeding response time thresholds
-- 🔍 **Query Optimization** — N+1 query detection with `req.perfToolkit.trackQuery()`
-- 📊 **Real-time Dashboard** — Beautiful dark-themed dashboard at `/__perf`
-- 📝 **Structured Logging** — Per-request timing, status codes, cache status, **and optional file-based logging**
+- 🔍 **Insights** — Automatic detection of N+1 queries, slow routes, and caching opportunities
+- 📊 **Modular Dashboard** — Multi-page real-time dashboard at `/__perf` (Overview, Routes, Insights, Logs)
+- 🔐 **Secure by Default** — Built-in dashboard authentication with session protection
+- 🧠 **Memory Efficient** — Automatic path normalization and route capping to prevent memory leaks in production
+- 📝 **Structured Logging** — Per-request timing, status codes, cache status, and optional file-based logging with rotation
 - 🎯 **Fully Typed** — Written in TypeScript with complete type definitions
 
 ---
@@ -39,7 +43,19 @@ const app = express();
 const toolkit = performanceToolkit({
   cache: true,
   logSlowRequests: true,
-  dashboard: true,
+  dashboard: {
+    enabled: true,
+    auth: {
+      username: "admin",
+      password: "your-password", // Change this!
+      secret: "your-session-secret", // Change this!
+    },
+  },
+  rateLimit: {
+    enabled: true,
+    windowMs: 60000,
+    max: 100,
+  },
 });
 
 // Apply the composable middleware
@@ -60,7 +76,21 @@ app.listen(3000, () => {
 
 ---
 
-## ⚙️ Configuration
+## ⚙️ Configuration Properties
+
+| Option            | Type                            | Default | Description                         |
+| :---------------- | :------------------------------ | :------ | :---------------------------------- |
+| `cache`           | `boolean \| CacheOptions`       | `true`  | LRU caching configuration.          |
+| `compression`     | `boolean \| CompressionOptions` | `true`  | Response compression settings.      |
+| `logSlowRequests` | `boolean \| LoggerOptions`      | `true`  | Slow request detection & logging.   |
+| `rateLimit`       | `boolean \| RateLimitOptions`   | `false` | Smart IP-based rate limiting.       |
+| `queryHelper`     | `boolean \| QueryHelperOptions` | `true`  | N+1 query detection helper.         |
+| `dashboard`       | `boolean \| DashboardOptions`   | `true`  | Real-time modular dashboard & auth. |
+| `maxLogs`         | `number`                        | `1000`  | Max log entries to keep in memory.  |
+
+### Advanced Usage Examples
+
+#### Caching with Redis
 
 ```typescript
 const toolkit = performanceToolkit({
@@ -102,6 +132,11 @@ const toolkit = performanceToolkit({
   // Dashboard — boolean or DashboardOptions
   dashboard: {
     path: "/__perf", // Dashboard mount path (default: '/__perf')
+    auth: {
+      username: "admin",
+      password: "your-password", // Change this!
+      secret: "your-session-secret", // Change this!
+    },
   },
 
   maxLogs: 1000, // Max log entries in memory (default: 1000)
@@ -110,27 +145,24 @@ const toolkit = performanceToolkit({
 
 ---
 
-## 📊 Dashboard
+## 📊 Performance Dashboard
 
-Access the performance dashboard at `http://localhost:3000/__perf`:
+Access the performance dashboard at `http://localhost:3000/__perf` (Protected with `admin`/`perf-toolkit` by default).
 
-- **Real-time stats** — Total requests, avg response time, slow request count
-- **Cache performance** — Hit/miss ratio donut chart
-- **Status code breakdown** — Visual bar chart
-- **Slowest routes** — Table of routes sorted by average response time
-- **Request log** — Filterable log with timing, cache status, and 🔥 slow flags
+The dashboard is now modular and divided into four key views:
 
-### Dashboard API
+- **🏠 Overview**: Real-time KPI grid, Event Loop lag, Heap Memory usage, and Cache efficiency.
+- **🛣️ Routes**: Per-endpoint breakdown of latency, call counts, and payload sizes.
+- **💡 Insights**: Smart recommendations for caching, N+1 query fixing, and heavy payload optimization.
+- **📋 Logs**: A live stream of request logs with 🔥 slow markers and cache status.
 
-```
-GET  /__perf              → Dashboard HTML
-GET  /__perf/api/metrics  → JSON metrics snapshot
-POST /__perf/api/reset    → Reset all metrics
-```
+### Memory Optimization
+
+The toolkit automatically **normalizes paths** (e.g., grouping `/users/1` and `/users/2` under `/users/:id`) and **caps unique routes** (max 200) to prevent memory leaks in production environments with heavy dynamic traffic.
 
 ---
 
-## 🔍 Query Tracking
+## 🔍 Smart Insights & Query Tracking
 
 Track database queries per request to detect N+1 patterns:
 
@@ -145,49 +177,41 @@ app.get("/api/posts", async (req, res) => {
 
   res.json(posts);
 });
-// Console: ⚠️  N+1 Alert: GET /api/posts has made 10+ queries
+// Dashboard will now show an "N+1 Query Detected" alert for this route!
 ```
 
 ---
 
 ## 🏗️ Programmatic API
 
+You can access the toolkit state programmatically:
+
 ```typescript
 const toolkit = performanceToolkit({ cache: true });
 
-// Access metrics programmatically
+// Access metrics snapshot
 const metrics = toolkit.getMetrics();
 console.log(metrics.totalRequests, metrics.avgResponseTime);
 
-// Reset metrics
-toolkit.resetMetrics();
-
 // Manual cache control
 toolkit.cache?.clear();
-toolkit.cache?.delete("GET:/api/users");
+toolkit.cache?.delete("GET /api/users");
+
+// Reset metrics
+toolkit.resetMetrics();
 ```
 
 ---
 
-## 🧪 Running Tests
+## 🧪 Testing & Development
 
 ```bash
+# Run unit & integration tests
 npm test
+
+# Run the example server
+npm run example
 ```
-
----
-
-## 🏃 Running the Example
-
-```bash
-npx ts-node example/server.ts
-```
-
-Then visit:
-
-- `http://localhost:3000/api/users` — fast, cached response
-- `http://localhost:3000/api/slow` — triggers slow request alert
-- `http://localhost:3000/__perf` — performance dashboard
 
 ---
 
@@ -196,25 +220,20 @@ Then visit:
 ```
 express-performance-toolkit/
 ├── src/
-│   ├── index.ts              # Main entrypoint & performanceToolkit()
+│   ├── index.ts              # Entrypoint & performanceToolkit()
 │   ├── types.ts              # TypeScript interfaces
-│   ├── store.ts              # Metrics store (ring buffer + counters)
-│   ├── cache.ts              # LRU cache + Redis adapter
-│   ├── compression.ts        # Compression middleware wrapper
-│   ├── logger.ts             # Request timing & slow detection
-│   ├── queryHelper.ts        # N+1 query detection
+│   ├── store.ts              # Metrics store (Capped routes & ring buffer)
+│   ├── cache.ts              # Cache middleware + adapters
+│   ├── logger.ts             # Path normalization & request timing
+│   ├── rateLimit.ts          # Smart IP-based rate limiter
+│   ├── analyzer.ts          # Insights engine
 │   └── dashboard/
-│       ├── dashboardRouter.ts # Dashboard Express router
-│       └── dashboard.html     # Dashboard UI
-├── tests/
-│   ├── cache.test.ts
-│   ├── store.test.ts
-│   └── integration.test.ts
+│       └── dashboardRouter.ts # Web UI backend & auth
+├── dashboard-ui/             # React dashboard source
 ├── example/
-│   └── server.ts             # Example Express app
+│   └── server.ts             # Comprehensive demo server
 ├── package.json
-├── tsconfig.json
-└── jest.config.js
+└── tsconfig.json
 ```
 
 ---
