@@ -1,4 +1,5 @@
 import { LogEntry, Metrics, RouteStats } from "./types";
+import { monitorEventLoopDelay } from "perf_hooks";
 
 /**
  * In-memory metrics store — shared state between all middleware components.
@@ -7,6 +8,7 @@ import { LogEntry, Metrics, RouteStats } from "./types";
 export class MetricsStore {
   private maxLogs: number;
   private logs: LogEntry[];
+  private histogram: ReturnType<typeof monitorEventLoopDelay>;
   private stats: {
     totalRequests: number;
     totalResponseTime: number;
@@ -35,6 +37,8 @@ export class MetricsStore {
       routes: {},
       startTime: Date.now(),
     };
+    this.histogram = monitorEventLoopDelay({ resolution: 10 });
+    this.histogram.enable();
   }
 
   /** Add a request log entry to the ring buffer. */
@@ -120,6 +124,8 @@ export class MetricsStore {
       cacheMisses: this.stats.cacheMisses,
       cacheHitRate,
       cacheSize: this.stats.cacheSize,
+      eventLoopLag: Math.round((this.histogram.mean / 1e6) * 10) / 10,
+      memoryUsage: process.memoryUsage(),
       statusCodes: { ...this.stats.statusCodes },
       routes: { ...this.stats.routes },
       recentLogs: this.logs.slice(-100),
@@ -139,5 +145,8 @@ export class MetricsStore {
     this.stats.statusCodes = {};
     this.stats.routes = {};
     this.stats.startTime = Date.now();
+    this.histogram.disable();
+    this.histogram = monitorEventLoopDelay({ resolution: 10 });
+    this.histogram.enable();
   }
 }

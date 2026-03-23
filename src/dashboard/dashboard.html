@@ -673,6 +673,22 @@
             >--:--:--</span
           >
         </div>
+        <div class="live-indicator">
+          <span>Lag</span>
+          <span
+            id="eventLoopLag"
+            style="margin-left: 4px; font-family: var(--font-mono); font-weight: 600; color: var(--accent-emerald)"
+            >0.0ms</span
+          >
+        </div>
+        <div class="live-indicator">
+          <span>RAM</span>
+          <span
+            id="memoryUsed"
+            style="margin-left: 4px; font-family: var(--font-mono); font-weight: 600; color: var(--text-100)"
+            >0MB</span
+          >
+        </div>
       </div>
     </nav>
 
@@ -973,6 +989,15 @@
             : "0";
         document.getElementById("highQueryPct").textContent =
           hqPct + "% of total";
+
+        // Health Indicators
+        document.getElementById("eventLoopLag").textContent = m.eventLoopLag + "ms";
+        document.getElementById("eventLoopLag").style.color = m.eventLoopLag > 100 
+          ? "var(--accent-rose)" 
+          : (m.eventLoopLag > 50 ? "var(--accent-amber)" : "var(--accent-emerald)");
+
+        const mb = (m.memoryUsage.heapUsed / 1024 / 1024).toFixed(1);
+        document.getElementById("memoryUsed").textContent = mb + "MB";
 
         // Donut Chart
         const hitPct = m.cacheHitRate;

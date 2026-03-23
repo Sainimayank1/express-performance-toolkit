@@ -100,4 +100,19 @@ describe('MetricsStore', () => {
     const metrics = store.getMetrics();
     expect(metrics.cacheHitRate).toBe(0);
   });
+
+  it('should track global and per-route high query requests (N+1)', () => {
+    store.addLog(makeEntry({ path: '/api/posts', highQueries: true }));
+    const metrics = store.getMetrics();
+    expect(metrics.highQueryRequests).toBe(1);
+    expect(metrics.routes['GET /api/posts'].highQueryCount).toBe(1);
+  });
+
+  it('should expose event loop lag and memory usage', () => {
+    const metrics = store.getMetrics();
+    expect(typeof metrics.eventLoopLag).toBe('number');
+    expect(metrics.memoryUsage).toBeDefined();
+    expect(typeof metrics.memoryUsage.rss).toBe('number');
+    expect(typeof metrics.memoryUsage.heapUsed).toBe('number');
+  });
 });

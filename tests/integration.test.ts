@@ -79,7 +79,7 @@ describe('Integration Tests', () => {
       const res = await request(app).get('/__perf');
       expect(res.status).toBe(200);
       expect(res.headers['content-type']).toMatch(/html/);
-      expect(res.text).toContain('Express Performance Dashboard');
+      expect(res.text).toContain('Express Performance Toolkit');
     });
 
     it('should serve metrics JSON', async () => {

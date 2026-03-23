@@ -117,6 +117,13 @@ export interface Metrics {
   cacheMisses: number;
   cacheHitRate: number;
   cacheSize: number;
+  eventLoopLag: number;
+  memoryUsage: {
+    rss: number;
+    heapTotal: number;
+    heapUsed: number;
+    external: number;
+  };
   statusCodes: Record<number, number>;
   routes: Record<string, RouteStats>;
   recentLogs: LogEntry[];
