@@ -169,7 +169,7 @@ export class MetricsStore {
 
     const mem = process.memoryUsage();
 
-    return {
+    const metrics: Metrics = {
       uptime: Date.now() - this.stats.startTime,
       totalRequests: this.stats.totalRequests,
       avgResponseTime,
@@ -185,6 +185,7 @@ export class MetricsStore {
         this.stats.totalRequests > 0
           ? Math.round(this.stats.totalBytesSent / this.stats.totalRequests)
           : 0,
+      insights: [], // Placeholder, filled below
       eventLoopLag: Math.round(this.histogram.mean / 1e6),
       memoryUsage: {
         rss: mem.rss,
@@ -197,6 +198,12 @@ export class MetricsStore {
       recentLogs: this.logs.slice(-100),
       blockedEvents: [...this.blockedEvents],
     };
+
+    // Generate insights
+    const { analyzeMetrics } = require("./analyzer");
+    metrics.insights = analyzeMetrics(metrics);
+
+    return metrics;
   }
 
   /** Reset all metrics. */

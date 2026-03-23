@@ -2,10 +2,11 @@ import { AlertTriangle, Zap } from "lucide-react";
 import { useMetrics } from "./hooks/useMetrics";
 import { formatUptime } from "./utils/formatters";
 import { KpiGrid } from "./components/KpiGrid";
-import { RoutesTable } from "./components/RoutesTable";
 import { HealthCharts } from "./components/HealthCharts";
+import { RoutesTable } from "./components/RoutesTable";
 import { CachePanel } from "./components/CachePanel";
 import { LiveLogs } from "./components/LiveLogs";
+import { InsightsPanel } from "./components/InsightsPanel";
 
 export default function App() {
   const { data, history, error } = useMetrics();
@@ -105,6 +106,8 @@ export default function App() {
 
       <div className="dashboard-wrapper">
         <KpiGrid data={data} />
+
+        <InsightsPanel insights={data.insights} />
 
         <div className="middle-grid">
           <RoutesTable routes={data.routes} />

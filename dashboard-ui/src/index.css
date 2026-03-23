@@ -400,3 +400,60 @@ tr:hover td { background: rgba(255, 255, 255, 0.02); }
 .method-badge.put { color: var(--accent-amber); background: rgba(245, 158, 11, 0.1); }
 .method-badge.delete { color: var(--accent-rose); background: rgba(244, 63, 94, 0.1); }
 
+
+/* Insights Panel */
+.insights-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.insight-item {
+  display: flex;
+  gap: 16px;
+  padding: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.insight-item:last-child {
+  border-bottom: none;
+}
+
+.insight-icon {
+  flex-shrink: 0;
+  padding-top: 2px;
+}
+
+.insight-content {
+  flex-grow: 1;
+}
+
+.insight-title {
+  font-weight: 600;
+  font-size: 0.95rem;
+  margin-bottom: 4px;
+}
+
+.insight-message {
+  font-size: 0.85rem;
+  color: var(--text-300);
+}
+
+.insight-action {
+  margin-top: 10px;
+  display: inline-flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  color: var(--text-200);
+  border: 1px solid var(--border);
+}
+
+.type-error .insight-title { color: var(--accent-rose); }
+.type-warning .insight-title { color: var(--accent-amber); }
+.type-info .insight-title { color: var(--accent-emerald); }
+
+.type-error { background: rgba(244, 63, 94, 0.02); }
+.type-warning { background: rgba(245, 158, 11, 0.02); }
+.type-info { background: rgba(16, 185, 129, 0.02); }

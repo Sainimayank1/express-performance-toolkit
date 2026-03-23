@@ -30,6 +30,13 @@ export interface LogEntry {
   highQueries?: boolean;
 }
 
+export interface Insight {
+  type: "info" | "warning" | "error";
+  title: string;
+  message: string;
+  action?: string;
+}
+
 export interface MetricsData {
   uptime: number;
   totalRequests: number;
@@ -43,6 +50,7 @@ export interface MetricsData {
   cacheSize: number;
   totalBytesSent: number;
   avgResponseSize: number;
+  insights: Insight[];
   eventLoopLag: number;
   memoryUsage: {
     rss: number;

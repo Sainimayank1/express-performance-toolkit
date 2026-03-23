@@ -135,6 +135,40 @@ export interface RouteStats {
   avgSize: number;
 }
 
+export interface Insight {
+  type: "info" | "warning" | "error";
+  title: string;
+  message: string;
+  action?: string;
+}
+
+export interface MetricSnapshot {
+  uptime: number;
+  totalRequests: number;
+  avgResponseTime: number;
+  slowRequests: number;
+  highQueryRequests: number;
+  rateLimitHits: number;
+  cacheHits: number;
+  cacheMisses: number;
+  cacheHitRate: number;
+  cacheSize: number;
+  totalBytesSent: number;
+  avgResponseSize: number;
+  insights: Insight[];
+  eventLoopLag: number;
+  memoryUsage: {
+    rss: number;
+    heapTotal: number;
+    heapUsed: number;
+    external: number;
+  };
+  statusCodes: Record<number, number>;
+  routes: Record<string, RouteStats>;
+  recentLogs: LogEntry[];
+  blockedEvents: BlockedEvent[];
+}
+
 export interface Metrics {
   uptime: number;
   totalRequests: number;
@@ -148,6 +182,7 @@ export interface Metrics {
   cacheSize: number;
   totalBytesSent: number;
   avgResponseSize: number;
+  insights: Insight[];
   eventLoopLag: number;
   memoryUsage: {
     rss: number;
