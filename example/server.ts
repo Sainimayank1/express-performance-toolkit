@@ -27,7 +27,15 @@ const toolkit = performanceToolkit({
     windowMs: 2 * 60 * 1000, // 2 minutes window
     max: 10, // 10 requests per window
   },
-  dashboard: true,
+  dashboard: {
+    enabled: true,
+    path: "/__perf",
+    auth: {
+      username: "admin",
+      password: "admin",
+      secret: "toolkit-secret",
+    },
+  },
 });
 
 // Apply the middleware

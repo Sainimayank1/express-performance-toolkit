@@ -1,5 +1,5 @@
 import { Activity } from "lucide-react";
-import { AreaChart, Area, Tooltip, ResponsiveContainer } from "recharts";
+import { Sparkline } from "./Sparkline";
 
 export type ChartDataPoint = {
   time: string;
@@ -8,6 +8,9 @@ export type ChartDataPoint = {
 };
 
 export function HealthCharts({ history }: { history: ChartDataPoint[] }) {
+  const lagData = history.map((d) => d.lag);
+  const memData = history.map((d) => d.memory);
+
   return (
     <div
       className="panel animate-in delay-3"
@@ -21,120 +24,60 @@ export function HealthCharts({ history }: { history: ChartDataPoint[] }) {
       <div
         className="panel-body"
         style={{
-          padding: "1rem",
+          padding: "1.5rem",
           display: "flex",
           flexDirection: "column",
-          gap: "1rem",
+          gap: "2rem",
         }}
       >
-        <div style={{ height: "90px", width: "100%" }}>
+        <div style={{ flex: 1, width: "100%" }}>
           <div
             style={{
-              fontSize: "0.75rem",
+              fontSize: "0.85rem",
               color: "var(--text-400)",
-              marginBottom: "4px",
+              marginBottom: "12px",
               display: "flex",
               justifyContent: "space-between",
+              alignItems: "center"
             }}
           >
             <span>Event Loop Lag (ms)</span>
-            <span style={{ color: "var(--accent-cyan)" }}>
-              Latest: {history[history.length - 1]?.lag || 0}ms
+            <span style={{ color: "var(--accent-cyan)", fontWeight: 600, fontSize: '1rem' }}>
+              {history[history.length - 1]?.lag || 0}ms
             </span>
           </div>
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart
-              data={history}
-              margin={{ top: 0, right: 0, left: 0, bottom: 0 }}
-            >
-              <defs>
-                <linearGradient id="lagColor" x1="0" y1="0" x2="0" y2="1">
-                  <stop
-                    offset="5%"
-                    stopColor="var(--accent-cyan)"
-                    stopOpacity={0.3}
-                  />
-                  <stop
-                    offset="95%"
-                    stopColor="var(--accent-cyan)"
-                    stopOpacity={0}
-                  />
-                </linearGradient>
-              </defs>
-              <Tooltip
-                contentStyle={{
-                  background: "var(--bg-surface-glass)",
-                  border: "1px solid var(--border)",
-                  borderRadius: "8px",
-                  fontSize: "0.8rem",
-                }}
-                itemStyle={{ color: "var(--text-100)" }}
-              />
-              <Area
-                type="monotone"
-                dataKey="lag"
-                stroke="var(--accent-cyan)"
-                fillOpacity={1}
-                fill="url(#lagColor)"
-                isAnimationActive={false}
-              />
-            </AreaChart>
-          </ResponsiveContainer>
+          <div style={{ height: "60px" }}>
+            <Sparkline 
+              data={lagData} 
+              color="var(--accent-cyan)" 
+              gradientId="lagGrad" 
+            />
+          </div>
         </div>
 
-        <div style={{ height: "90px", width: "100%" }}>
+        <div style={{ flex: 1, width: "100%" }}>
           <div
             style={{
-              fontSize: "0.75rem",
+              fontSize: "0.85rem",
               color: "var(--text-400)",
-              marginBottom: "4px",
+              marginBottom: "12px",
               display: "flex",
               justifyContent: "space-between",
+              alignItems: "center"
             }}
           >
             <span>Heap Memory Used (MB)</span>
-            <span style={{ color: "var(--accent-indigo)" }}>
-              Latest: {history[history.length - 1]?.memory || 0}MB
+            <span style={{ color: "var(--accent-indigo)", fontWeight: 600, fontSize: '1rem' }}>
+              {history[history.length - 1]?.memory || 0}MB
             </span>
           </div>
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart
-              data={history}
-              margin={{ top: 0, right: 0, left: 0, bottom: 0 }}
-            >
-              <defs>
-                <linearGradient id="memColor" x1="0" y1="0" x2="0" y2="1">
-                  <stop
-                    offset="5%"
-                    stopColor="var(--accent-indigo)"
-                    stopOpacity={0.3}
-                  />
-                  <stop
-                    offset="95%"
-                    stopColor="var(--accent-indigo)"
-                    stopOpacity={0}
-                  />
-                </linearGradient>
-              </defs>
-              <Tooltip
-                contentStyle={{
-                  background: "var(--bg-surface-glass)",
-                  border: "1px solid var(--border)",
-                  borderRadius: "8px",
-                  fontSize: "0.8rem",
-                }}
-                itemStyle={{ color: "var(--text-100)" }}
-              />
-              <Area
-                type="monotone"
-                dataKey="memory"
-                stroke="var(--accent-indigo)"
-                fillOpacity={1}
-                fill="url(#memColor)"
-                isAnimationActive={false}
-              />
-            </AreaChart>
-          </ResponsiveContainer>
+          <div style={{ height: "60px" }}>
+            <Sparkline 
+              data={memData} 
+              color="var(--accent-indigo)" 
+              gradientId="memGrad" 
+            />
+          </div>
         </div>
       </div>
     </div>
