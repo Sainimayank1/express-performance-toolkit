@@ -60,11 +60,22 @@ export interface QueryHelperOptions {
   threshold?: number;
 }
 
+export interface DashboardAuthOptions {
+  /** Admin username (default: 'admin') */
+  username?: string;
+  /** Admin password (default: 'perf-toolkit') */
+  password?: string;
+  /** Secret key for session cookie (default: 'toolkit-secret') */
+  secret?: string;
+}
+
 export interface DashboardOptions {
   /** Enable dashboard (default: true) */
   enabled?: boolean;
   /** Dashboard mount path (default: '/__perf') */
   path?: string;
+  /** Authentication settings. If provided, user must login to see dashboard. */
+  auth?: DashboardAuthOptions;
 }
 
 export interface RateLimitOptions {

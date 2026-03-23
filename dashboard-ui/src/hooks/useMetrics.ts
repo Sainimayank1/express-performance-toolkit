@@ -37,6 +37,12 @@ export interface Insight {
   action?: string;
 }
 
+export interface HistoryData {
+  time: string;
+  lag: number;
+  memory: number;
+}
+
 export interface MetricsData {
   uptime: number;
   totalRequests: number;
@@ -64,44 +70,52 @@ export interface MetricsData {
   blockedEvents: BlockedEvent[];
 }
 
-export function useMetrics() {
+export function useMetrics(enabled: boolean = true) {
   const [data, setData] = useState<MetricsData | null>(null);
+  const [history, setHistory] = useState<HistoryData[]>([]);
   const [error, setError] = useState<Error | null>(null);
-  // Store historical data for charts
-  const [history, setHistory] = useState<
-    { time: string; lag: number; memory: number }[]
-  >([]);
 
   useEffect(() => {
+    if (!enabled) return;
+
     let mounted = true;
 
     const fetchMetrics = async () => {
       try {
-        const res = await fetch("./api/metrics");
-        if (!res.ok) throw new Error("Network response was not ok");
-        const json: MetricsData = await res.json();
+        const response = await fetch("./api/metrics");
+        if (!response.ok) {
+          if (response.status === 401) {
+            throw new Error("unauthorized");
+          }
+          throw new Error("Failed to fetch metrics");
+        }
+        const metrics: MetricsData = await response.json();
 
         if (mounted) {
-          setData(json);
+          setData(metrics);
           setError(null);
 
-          // Append to history (keep last 30 data points = 90 seconds)
+          // Append to history (keep last 50 data points)
           setHistory((prev) => {
             const timeStr = new Date().toLocaleTimeString([], {
               hour12: false,
+              hour: "2-digit",
               minute: "2-digit",
               second: "2-digit",
             });
             const newPoint = {
               time: timeStr,
-              lag: json.eventLoopLag,
-              memory: Math.round(json.memoryUsage.heapUsed / 1024 / 1024),
+              lag: metrics.eventLoopLag,
+              memory: Math.round(metrics.memoryUsage.heapUsed / 1024 / 1024),
             };
             return [...prev, newPoint].slice(-30);
           });
         }
       } catch (e: unknown) {
-        if (mounted) setError(e instanceof Error ? e : new Error(String(e)));
+        if (mounted) {
+          const errorObj = e instanceof Error ? e : new Error(String(e));
+          setError(errorObj);
+        }
       }
     };
 
@@ -111,7 +125,7 @@ export function useMetrics() {
       mounted = false;
       clearInterval(id);
     };
-  }, []);
+  }, [enabled]);
 
-  return { data, error, history };
+  return { data, history, error };
 }

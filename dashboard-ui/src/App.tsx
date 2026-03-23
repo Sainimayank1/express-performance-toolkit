@@ -1,4 +1,5 @@
-import { AlertTriangle, Zap } from "lucide-react";
+import { useState, useEffect } from "react";
+import { AlertTriangle, Zap, LogOut } from "lucide-react";
 import { useMetrics } from "./hooks/useMetrics";
 import { formatUptime } from "./utils/formatters";
 import { KpiGrid } from "./components/KpiGrid";
@@ -7,11 +8,52 @@ import { RoutesTable } from "./components/RoutesTable";
 import { CachePanel } from "./components/CachePanel";
 import { LiveLogs } from "./components/LiveLogs";
 import { InsightsPanel } from "./components/InsightsPanel";
+import { Login } from "./components/Login";
 
 export default function App() {
-  const { data, history, error } = useMetrics();
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [isAuthRequired, setIsAuthRequired] = useState(false);
+  const { data, history, error } = useMetrics(
+    isAuthenticated === true || (isAuthenticated !== null && !isAuthRequired)
+  );
 
-  if (error) {
+  const checkAuth = async () => {
+    try {
+      const resp = await fetch("./api/auth-check");
+      if (!resp.ok) throw new Error("Auth check failed");
+      const authData = await resp.json();
+      setIsAuthenticated(authData.authenticated);
+      setIsAuthRequired(authData.required);
+    } catch (err) {
+      console.error("Auth check failed", err);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await fetch("./api/logout", { method: "POST" });
+      setIsAuthenticated(false);
+    } catch (err) {
+      console.error("Logout failed", err);
+    }
+  };
+
+  useEffect(() => {
+    checkAuth();
+  }, []);
+
+  // Re-check auth if we get an Unauthorized error from metrics
+  useEffect(() => {
+    if (String(error) === "Unauthorized" && isAuthenticated !== false) {
+      checkAuth();
+    }
+  }, [error, isAuthenticated]);
+
+  if (isAuthRequired && isAuthenticated === false) {
+    return <Login onLoginSuccess={() => setIsAuthenticated(true)} />;
+  }
+
+  if (error && String(error) !== "Unauthorized") {
     return (
       <div
         className="dashboard-wrapper"
@@ -49,7 +91,7 @@ export default function App() {
     );
   }
 
-  if (!data)
+  if (!data || isAuthenticated === null)
     return (
       <div className="dashboard-wrapper empty-state">Connecting to API...</div>
     );
@@ -101,6 +143,11 @@ export default function App() {
               {Math.round(data.memoryUsage.heapUsed / 1024 / 1024)}MB
             </span>
           </div>
+          {isAuthRequired && (
+            <button className="nav-btn" onClick={handleLogout} title="Logout">
+              <LogOut size={16} />
+            </button>
+          )}
         </div>
       </nav>
 
