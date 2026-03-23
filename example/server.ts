@@ -24,7 +24,7 @@ const toolkit = performanceToolkit({
   },
   rateLimit: {
     enabled: true,
-    windowMs: 15 * 60 * 1000, // 15 minutes window
+    windowMs: 2 * 60 * 1000, // 2 minutes window
     max: 10, // 10 requests per window
   },
   dashboard: true,

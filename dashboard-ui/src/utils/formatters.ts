@@ -1,5 +1,16 @@
 export const fNum = (n: number) => n?.toLocaleString() || '0';
-export const fPct = (n: number, total: number) => total > 0 ? ((n / total) * 100).toFixed(1) : '0';
+export function fPct(val: number, total: number): string {
+  if (total === 0) return "0";
+  return ((val / total) * 100).toFixed(1);
+}
+
+export function fBytes(bytes: number): string {
+  if (bytes === 0) return "0 B";
+  const k = 1024;
+  const sizes = ["B", "KB", "MB", "GB", "TB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+}
 
 export const formatUptime = (ms: number) => {
   if (!ms) return "00:00:00";

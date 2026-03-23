@@ -1,5 +1,5 @@
 import type { RouteStats } from "../hooks/useMetrics";
-import { fNum, getTimeClass } from "../utils/formatters";
+import { fNum, getTimeClass, fBytes } from "../utils/formatters";
 
 export function RoutesTable({
   routes,
@@ -23,13 +23,14 @@ export function RoutesTable({
                 <th>Route Path</th>
                 <th>Calls</th>
                 <th>Avg Latency</th>
+                <th>Payload</th>
                 <th>Anomalies</th>
               </tr>
             </thead>
             <tbody>
               {routeEntries.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="empty-state">
+                  <td colSpan={5} className="empty-state">
                     No route data collected yet.
                   </td>
                 </tr>
@@ -63,6 +64,9 @@ export function RoutesTable({
                       </td>
                       <td className={getTimeClass(stats.avgTime)}>
                         {stats.avgTime}ms
+                      </td>
+                      <td style={{ color: "var(--text-300)" }}>
+                        {fBytes(stats.avgSize)}
                       </td>
                       <td>
                         {anomalies.length > 0 ? (

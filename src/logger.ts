@@ -138,7 +138,7 @@ export function createLoggerMiddleware(
     const startTime = Date.now();
     const reqPath = req.originalUrl || req.url;
 
-    // Ignore dashboard API paths (use includes to handle query strings)
+    // Ignore dashboard API paths
     if (
       reqPath.includes("/api/metrics") ||
       reqPath.includes("/api/reset") ||
@@ -147,12 +147,35 @@ export function createLoggerMiddleware(
       return next();
     }
 
+    // Byte counting logic
+    let bytesSent = 0;
+    const originalWrite = res.write;
+    const originalEnd = res.end;
+
+    res.write = function (chunk: any, encoding?: any, _callback?: any): boolean {
+      if (chunk) {
+        bytesSent += Buffer.isBuffer(chunk)
+          ? chunk.length
+          : Buffer.byteLength(chunk, (typeof encoding === "string" ? encoding : "utf8") as BufferEncoding);
+      }
+      return originalWrite.apply(res, arguments as any);
+    };
+
+    res.end = function (chunk: any, encoding?: any, _callback?: any): Response {
+      if (chunk && typeof chunk !== "function") {
+        bytesSent += Buffer.isBuffer(chunk)
+          ? chunk.length
+          : Buffer.byteLength(chunk, (typeof encoding === "string" ? encoding : "utf8") as BufferEncoding);
+      }
+      return originalEnd.apply(res, arguments as any);
+    };
+
     // Attach perf data to request
     if (!req.perfToolkit) {
       req.perfToolkit = {
         startTime,
         queryCount: 0,
-        trackQuery: (label?: string) => {
+        trackQuery: () => {
           req.perfToolkit!.queryCount++;
         },
       };
@@ -172,14 +195,13 @@ export function createLoggerMiddleware(
         cached: res.getHeader("X-Cache") === "HIT",
         highQueries: req.perfToolkit?.highQueries || false,
         queryCount: req.perfToolkit?.queryCount,
-        contentLength:
-          parseInt(res.getHeader("content-length") as string, 10) || undefined,
+        bytesSent,
         userAgent: req.get("user-agent"),
         ip: req.ip,
       };
 
       // Record in store
-      store.addLog(entry);
+      store.recordLog(entry as any); // Cast because Omit/& types can be tricky with interfaces
 
       if (isSlow) {
         store.recordSlowRequest();
@@ -197,7 +219,6 @@ export function createLoggerMiddleware(
 
       // File output
       if (rotator) {
-        // Write as JSONL (JSON Lines) for easy log ingestion
         const logLine = JSON.stringify(entry) + "\n";
         rotator.getStream().write(logLine);
       }

@@ -1,6 +1,6 @@
-import { Activity, Zap, AlertTriangle, Database, ShieldAlert } from "lucide-react";
+import { Activity, Zap, AlertTriangle, Database, ShieldAlert, Server, HardDrive } from "lucide-react";
 import type { MetricsData } from "../hooks/useMetrics";
-import { fNum, fPct } from "../utils/formatters";
+import { fNum, fPct, fBytes } from "../utils/formatters";
 import { useState } from "react";
 import { BlockedModal } from "./BlockedModal";
 
@@ -98,6 +98,42 @@ export function KpiGrid({ data }: { data: MetricsData }) {
           </span>
         </div>
       </div>
+      <div className="kpi-card grad-1 animate-in delay-5">
+        <div className="kpi-title">
+          <Server
+            size={14}
+            style={{
+              display: "inline",
+              marginRight: 6,
+              verticalAlign: "text-bottom",
+            }}
+          />{" "}
+          Network Egress
+        </div>
+        <div className="kpi-value val-emerald">
+          {fBytes(data.totalBytesSent)}
+        </div>
+        <div className="kpi-subtext">Total bytes sent</div>
+      </div>
+
+      <div className="kpi-card grad-1 animate-in delay-6">
+        <div className="kpi-title">
+          <HardDrive
+            size={14}
+            style={{
+              display: "inline",
+              marginRight: 6,
+              verticalAlign: "text-bottom",
+            }}
+          />{" "}
+          Avg Payload
+        </div>
+        <div className="kpi-value">
+          {fBytes(data.avgResponseSize)}
+        </div>
+        <div className="kpi-subtext">Per request average</div>
+      </div>
+
       <div className="kpi-card grad-4 animate-in delay-6" style={{ position: 'relative' }}>
         <div className="kpi-title">
           <ShieldAlert

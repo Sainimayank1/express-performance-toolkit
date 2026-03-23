@@ -7,6 +7,8 @@ export interface RouteStats {
   highQueryCount: number;
   rateLimitHits: number;
   avgTime: number;
+  totalBytes: number;
+  avgSize: number;
 }
 
 export interface BlockedEvent {
@@ -39,6 +41,8 @@ export interface MetricsData {
   cacheMisses: number;
   cacheHitRate: number;
   cacheSize: number;
+  totalBytesSent: number;
+  avgResponseSize: number;
   eventLoopLag: number;
   memoryUsage: {
     rss: number;

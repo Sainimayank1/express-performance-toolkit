@@ -107,6 +107,7 @@ export interface LogEntry {
   statusCode: number;
   responseTime: number;
   timestamp: number;
+  bytesSent?: number; // Added bandwidth field
   slow: boolean;
   cached: boolean;
   queryCount?: number;
@@ -130,6 +131,8 @@ export interface RouteStats {
   highQueryCount: number;
   rateLimitHits: number;
   avgTime: number;
+  totalBytes: number;
+  avgSize: number;
 }
 
 export interface Metrics {
@@ -143,6 +146,8 @@ export interface Metrics {
   cacheMisses: number;
   cacheHitRate: number;
   cacheSize: number;
+  totalBytesSent: number;
+  avgResponseSize: number;
   eventLoopLag: number;
   memoryUsage: {
     rss: number;
