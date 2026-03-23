@@ -103,7 +103,7 @@ export interface ToolkitOptions {
   /** Query optimization helper */
   queryHelper?: boolean | QueryHelperOptions;
   /** Performance dashboard */
-  dashboard?: DashboardOptions;
+  dashboard?: boolean | DashboardOptions;
   /** Rate limiting */
   rateLimit?: boolean | RateLimitOptions;
   /** Max log entries to keep in memory (default: 1000) */

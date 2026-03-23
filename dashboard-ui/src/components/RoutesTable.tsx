@@ -40,7 +40,6 @@ export function RoutesTable({
                   if (stats.slowCount > 0)
                     anomalies.push(
                       <span key="slow">
-                        <span className="fire-icon">🔥</span>{" "}
                         <span style={{ color: "var(--accent-rose)" }}>
                           {stats.slowCount} Slow
                         </span>

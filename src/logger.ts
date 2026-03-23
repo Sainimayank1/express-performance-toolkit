@@ -9,7 +9,7 @@ import { MetricsStore } from "./store";
  * Default log formatter for console output.
  */
 function defaultFormatter(entry: LogEntry): string {
-  const slow = entry.slow ? " 🔥 SLOW" : "";
+  const slow = entry.slow ? " [SLOW]" : "";
   const cached = entry.cached ? " [CACHED]" : "";
   const status = entry.statusCode;
   const time = `${entry.responseTime}ms`;

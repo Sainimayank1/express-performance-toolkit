@@ -14,7 +14,7 @@ A powerful, all-in-one Express middleware that automatically optimizes your app 
 - 🗜️ **Response Compression** — Gzip/deflate with configurable thresholds
 - 🛡️ **Smart Rate Limiting** — Protect your API with IP-based limits and blocked traffic tracking
 - 📉 **Bandwidth Monitoring** — Real-time tracking of network egress and payload sizes
-- 🔥 **Slow API Detection** — Flag & log requests exceeding response time thresholds
+- **Slow API Detection** — Flag & log requests exceeding response time thresholds
 - 🔍 **Insights** — Automatic detection of N+1 queries, slow routes, and caching opportunities
 - 📊 **Modular Dashboard** — Multi-page real-time dashboard at `/__perf` (Overview, Routes, Insights, Logs)
 - 🔐 **Secure by Default** — Built-in dashboard authentication with session protection
@@ -154,7 +154,7 @@ The dashboard is now modular and divided into four key views:
 - **🏠 Overview**: Real-time KPI grid, Event Loop lag, Heap Memory usage, and Cache efficiency.
 - **🛣️ Routes**: Per-endpoint breakdown of latency, call counts, and payload sizes.
 - **💡 Insights**: Smart recommendations for caching, N+1 query fixing, and heavy payload optimization.
-- **📋 Logs**: A live stream of request logs with 🔥 slow markers and cache status.
+- **📋 Logs**: A live stream of request logs with **slow markers** and cache status.
 
 ### Memory Optimization
 
