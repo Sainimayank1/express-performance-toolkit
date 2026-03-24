@@ -3,7 +3,7 @@
 **Fast, composable performance middleware for [Express](https://expressjs.com).**
 
 [![NPM Version](https://img.shields.io/npm/v/express-performance-toolkit.svg)](https://www.npmjs.com/package/express-performance-toolkit)
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
+[![License: MIT](https://github.com/Sainimayank1/express-performance-toolkit/blob/main/LICENSE)
 
 ```ts
 import express from "express";
