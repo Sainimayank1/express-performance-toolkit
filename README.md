@@ -3,7 +3,7 @@
 **Fast, composable performance middleware for [Express](https://expressjs.com).**
 
 [![NPM Version](https://img.shields.io/npm/v/express-performance-toolkit.svg)](https://www.npmjs.com/package/express-performance-toolkit)
-[![License: MIT](https://github.com/Sainimayank1/express-performance-toolkit/blob/main/LICENSE)
+[![License: GNU](https://github.com/Sainimayank1/express-performance-toolkit/blob/main/LICENSE)
 
 ```ts
 import express from "express";
@@ -118,4 +118,4 @@ npm test
 
 ## License
 
-[MIT](https://github.com/Sainimayank1/express-performance-toolkit/blob/main/LICENSE)
+[GNU](https://github.com/Sainimayank1/express-performance-toolkit/blob/main/LICENSE)
