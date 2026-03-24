@@ -2,7 +2,7 @@ import express, { Request, Response } from "express";
 import { performanceToolkit } from "../src/index";
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 // ── Initialize Performance Toolkit ──────────────────────────
 const toolkit = performanceToolkit({
@@ -33,7 +33,6 @@ const toolkit = performanceToolkit({
     auth: {
       username: "admin",
       password: "admin",
-      secret: "toolkit-secret",
     },
   },
 });

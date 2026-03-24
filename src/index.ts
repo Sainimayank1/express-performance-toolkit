@@ -5,7 +5,7 @@ import { createCompressionMiddleware } from "./compression";
 import { createLoggerMiddleware } from "./logger";
 import { createQueryHelperMiddleware } from "./queryHelper";
 import { createRateLimiter } from "./rateLimit";
-import { createDashboardRouter } from "./dashboardRouter";
+import { createDashboardRouter } from "./auth/dashboardRouter";
 import {
   ToolkitOptions,
   CacheOptions,
@@ -192,5 +192,5 @@ export { createCompressionMiddleware } from "./compression";
 export { createLoggerMiddleware } from "./logger";
 export { createQueryHelperMiddleware } from "./queryHelper";
 export { createRateLimiter } from "./rateLimit";
-export { createDashboardRouter } from "./dashboardRouter";
+export { createDashboardRouter } from "./auth/dashboardRouter";
 export * from "./types";

@@ -67,8 +67,6 @@ export interface DashboardAuthOptions {
   username?: string;
   /** Admin password (default: 'perf-toolkit') */
   password?: string;
-  /** Secret key for session cookie (default: 'toolkit-secret') */
-  secret?: string;
 }
 
 export interface DashboardOptions {

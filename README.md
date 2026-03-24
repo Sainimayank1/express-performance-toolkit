@@ -51,7 +51,7 @@ const toolkit = performanceToolkit({
   queryHelper: { threshold: 10 },
   dashboard: {
     enabled: true,
-    auth: { username: "admin", password: "changeme", secret: "your-secret" },
+    auth: { username: "admin", password: "changeme" },
   },
 });
 

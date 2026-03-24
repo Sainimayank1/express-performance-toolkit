@@ -1,16 +1,19 @@
 import express, { Router, Request, Response, NextFunction } from "express";
 import * as path from "path";
 import * as fs from "fs";
-import { MetricsStore } from "./store";
-import { DashboardOptions } from "./types";
+import { MetricsStore } from "../store";
+import { DashboardOptions } from "../types";
+import { DEFAULT_AUTH_OPTIONS, DEFAULT_DASHBOARD_PATH } from "../constants";
+import { SessionStore } from "./session";
 
 /**
- * Simple session-less auth token based on the secret.
- * In a real-world scenario, you'd use a more robust session manager or JWT.
+ * 🔐 Session-based authentication for the dashboard.
+ * We use an in-memory session store with random session IDs.
  */
-const generateToken = (secret: string) => {
-  return Buffer.from(`auth:${secret}`).toString("base64");
-};
+const sessionStore = new SessionStore({
+  ttl: 24 * 60 * 60 * 1000, // 24 hours
+  maxSessions: 1000,
+});
 
 /**
  * Create the dashboard Express router.
@@ -25,28 +28,28 @@ export function createDashboardRouter(
   // Default auth settings if none provided (Security by default)
   // To explicitly disable auth, pass auth: null or a falsy value in the config
   const auth =
-    options.auth === null
-      ? null
-      : options.auth || {
-          username: "admin",
-          password: "perf-toolkit",
-          secret: "toolkit-secret",
-        };
+    options.auth === null ? null : options.auth || DEFAULT_AUTH_OPTIONS;
 
-  const mountPath = options.path || "/__perf";
+  const mountPath = options.path || DEFAULT_DASHBOARD_PATH;
 
   // Use JSON parsing for login endpoint
   router.use(express.json());
+
+  // Helper to extract session ID from cookie
+  const getSessionId = (req: Request): string | null => {
+    const cookie = req.headers.cookie || "";
+    const match = cookie.match(/perf-auth=([^;]+)/);
+    return match ? match[1] : null;
+  };
 
   // Authentication Middleware
   const requireAuth = (req: Request, res: Response, next: NextFunction) => {
     if (!auth) return next();
 
-    const expectedToken = generateToken(auth.secret || "toolkit-secret");
-    const cookie = req.headers.cookie || "";
-    const hasToken = cookie.includes(`perf-auth=${expectedToken}`);
+    const sessionId = getSessionId(req);
+    const session = sessionId ? sessionStore.get(sessionId) : null;
 
-    if (hasToken) {
+    if (session && session.authenticated) {
       return next();
     }
 
@@ -60,15 +63,17 @@ export function createDashboardRouter(
     }
 
     const { username, password } = req.body;
-    const defaultUser = auth.username || "admin";
-    const defaultPass = auth.password || "perf-toolkit";
+    const defaultUser = auth.username;
+    const defaultPass = auth.password;
 
     if (username === defaultUser && password === defaultPass) {
-      const token = generateToken(auth.secret || "toolkit-secret");
+      // Create session and get ID
+      const sessionId = sessionStore.create();
+
       // Set cookie with HttpOnly and reasonable maxAge
       res.setHeader(
         "Set-Cookie",
-        `perf-auth=${token}; Path=${mountPath}; HttpOnly; Max-Age=86400; SameSite=Lax`,
+        `perf-auth=${sessionId}; Path=${mountPath}; HttpOnly; Max-Age=86400; SameSite=Lax`,
       );
       return res.json({ success: true });
     }
@@ -77,7 +82,12 @@ export function createDashboardRouter(
   });
 
   // Logout Endpoint
-  router.post("/api/logout", (_req: Request, res: Response) => {
+  router.post("/api/logout", (req: Request, res: Response) => {
+    const sessionId = getSessionId(req);
+    if (sessionId) {
+      sessionStore.destroy(sessionId);
+    }
+
     res.setHeader(
       "Set-Cookie",
       `perf-auth=; Path=${mountPath}; HttpOnly; Max-Age=0`,
@@ -89,9 +99,9 @@ export function createDashboardRouter(
   router.get("/api/auth-check", (req: Request, res: Response) => {
     if (!auth) return res.json({ authenticated: true, required: false });
 
-    const expectedToken = generateToken(auth.secret || "toolkit-secret");
-    const cookie = req.headers.cookie || "";
-    const authenticated = cookie.includes(`perf-auth=${expectedToken}`);
+    const sessionId = getSessionId(req);
+    const session = sessionId ? sessionStore.get(sessionId) : null;
+    const authenticated = !!(session && session.authenticated);
 
     res.json({ authenticated, required: true });
   });
@@ -108,10 +118,10 @@ export function createDashboardRouter(
   });
 
   // Robust UI path resolution:
-  // 1. When running from 'dist/dashboardRouter.js', UI is at './dashboard-ui'
-  // 2. When running from 'src/dashboardRouter.ts' (ts-node), UI is at '../dashboard-ui/dist'
-  const distPath = path.resolve(__dirname, "./dashboard-ui");
-  const devPath = path.resolve(__dirname, "../dashboard-ui/dist");
+  // 1. When running from 'dist/dashboard/dashboardRouter.js', UI is at '../dashboard-ui'
+  // 2. When running from 'src/dashboard/dashboardRouter.ts' (ts-node), UI is at '../../dashboard-ui/dist'
+  const distPath = path.resolve(__dirname, "../dashboard-ui");
+  const devPath = path.resolve(__dirname, "../../dashboard-ui/dist");
 
   // Prefer dist path if it exists (production), fallback to dev path
   const uiPath = fs.existsSync(distPath) ? distPath : devPath;
