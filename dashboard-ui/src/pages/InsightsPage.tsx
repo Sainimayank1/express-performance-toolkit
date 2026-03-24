@@ -4,9 +4,11 @@ import { Bell } from "lucide-react";
 
 interface InsightsPageProps {
   data: MetricsData;
+  readKeys: Set<string>;
+  onMarkRead: (key: string) => void;
 }
 
-export function InsightsPage({ data }: InsightsPageProps) {
+export function InsightsPage({ data, readKeys, onMarkRead }: InsightsPageProps) {
   return (
     <div className="page-content animate-in">
       <div
@@ -32,11 +34,15 @@ export function InsightsPage({ data }: InsightsPageProps) {
         <div>
           <h2 style={{ fontSize: "1.25rem" }}>Performance Insights</h2>
           <p style={{ color: "var(--text-400)", fontSize: "0.9rem" }}>
-            AI-generated recommendations and health alerts.
+            AI-generated recommendations and health alerts. Tap an insight for details.
           </p>
         </div>
       </div>
-      <InsightsPanel insights={data.insights} />
+      <InsightsPanel
+        insights={data.insights}
+        readKeys={readKeys}
+        onMarkRead={onMarkRead}
+      />
     </div>
   );
 }

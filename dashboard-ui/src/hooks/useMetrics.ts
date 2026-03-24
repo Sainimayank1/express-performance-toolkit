@@ -32,9 +32,11 @@ export interface LogEntry {
 
 export interface Insight {
   type: "info" | "warning" | "error";
+  key: string;
   title: string;
   message: string;
   action?: string;
+  detail?: string;
 }
 
 export interface HistoryData {

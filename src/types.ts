@@ -153,9 +153,11 @@ export interface RouteStats {
 
 export interface Insight {
   type: "info" | "warning" | "error";
+  key: string;
   title: string;
   message: string;
   action?: string;
+  detail?: string;
 }
 
 export interface MetricSnapshot {

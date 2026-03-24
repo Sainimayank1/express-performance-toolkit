@@ -24,6 +24,15 @@ export default function App() {
   const [activePage, setActivePage] = useState<PageType>("overview");
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [isAuthRequired, setIsAuthRequired] = useState(false);
+  const [readInsightKeys, setReadInsightKeys] = useState<Set<string>>(new Set());
+
+  const markInsightRead = (key: string) => {
+    setReadInsightKeys((prev) => {
+      const next = new Set(prev);
+      next.add(key);
+      return next;
+    });
+  };
 
   const { data, history, error } = useMetrics(
     isAuthenticated === true || (isAuthenticated !== null && !isAuthRequired),
@@ -91,7 +100,13 @@ export default function App() {
       case "routes":
         return <RoutesPage data={data} />;
       case "insights":
-        return <InsightsPage data={data} />;
+        return (
+          <InsightsPage
+            data={data}
+            readKeys={readInsightKeys}
+            onMarkRead={markInsightRead}
+          />
+        );
       case "logs":
         return <LogsPage data={data} />;
       default:
@@ -133,8 +148,10 @@ export default function App() {
             onClick={() => setActivePage("insights")}
           >
             <Bell size={16} /> Insights
-            {data.insights.length > 0 && (
-              <span className="badge">{data.insights.length}</span>
+            {data.insights.filter((i) => !readInsightKeys.has(i.key)).length > 0 && (
+              <span className="badge">
+                {data.insights.filter((i) => !readInsightKeys.has(i.key)).length}
+              </span>
             )}
           </button>
           <button
