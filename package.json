@@ -2,6 +2,14 @@
   "name": "express-performance-toolkit",
   "version": "2.1.0",
   "description": "⚡ A powerful Express middleware that automatically optimizes your app with request caching, response compression, slow API detection, and a real-time performance dashboard.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Sainimayank1/express-performance-toolkit"
+  },
+  "bugs": {
+    "url": "https://github.com/Sainimayank1/express-performance-toolkit/issues"
+  },
+  "homepage": "https://github.com/Sainimayank1/express-performance-toolkit#readme",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [
