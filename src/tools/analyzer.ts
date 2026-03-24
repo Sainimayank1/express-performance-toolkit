@@ -1,4 +1,4 @@
-import { Metrics, Insight } from "./types";
+import { Metrics, Insight } from "../types";
 
 /**
  * Heuristic-based analysis engine that transforms raw metrics into actionable advice.

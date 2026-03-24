@@ -1,12 +1,12 @@
-import { Request, Response, NextFunction } from 'express';
-import { QueryHelperOptions } from "./types";
+import { Request, Response, NextFunction } from "express";
+import { QueryHelperOptions } from "../types";
 
 /**
  * Create query optimization helper middleware.
  * Tracks database queries per request and warns about potential N+1 issues.
  */
 export function createQueryHelperMiddleware(
-  options: QueryHelperOptions = {}
+  options: QueryHelperOptions = {},
 ): (req: Request, res: Response, next: NextFunction) => void {
   const { threshold = 10 } = options;
 
@@ -32,16 +32,16 @@ export function createQueryHelperMiddleware(
       // Warn if threshold exceeded
       if (req.perfToolkit!.queryCount === threshold) {
         req.perfToolkit!.highQueries = true;
-        
+
         console.warn(
           `[perf] ⚠️  N+1 Alert: ${req.method} ${req.originalUrl || req.url} ` +
-            `has made ${threshold}+ queries. Consider optimizing with batch/join queries.`
+            `has made ${threshold}+ queries. Consider optimizing with batch/join queries.`,
         );
         console.warn(
           `[perf]   Recent queries: ${queries
             .slice(-5)
             .map((q) => q.label)
-            .join(', ')}`
+            .join(", ")}`,
         );
       }
     };

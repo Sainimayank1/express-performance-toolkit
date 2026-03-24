@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
-import { MetricsStore } from "./store";
-import { RateLimitOptions } from "./types";
+import { MetricsStore } from "../store";
+import { RateLimitOptions } from "../types";
 
 interface RateLimitTracker {
   count: number;
@@ -9,9 +9,10 @@ interface RateLimitTracker {
 
 export function createRateLimiter(
   store: MetricsStore,
-  options: RateLimitOptions | boolean | undefined
+  options: RateLimitOptions | boolean | undefined,
 ) {
-  const enabled = typeof options === "boolean" ? options : options?.enabled !== false;
+  const enabled =
+    typeof options === "boolean" ? options : options?.enabled !== false;
   if (!enabled) {
     return (req: Request, res: Response, next: NextFunction) => next();
   }
@@ -80,7 +81,7 @@ export function createRateLimiter(
 
     if (tracker.count > max) {
       store.recordRateLimitHit(routeKey, ip, req.method, req.path);
-      
+
       res.setHeader("Retry-After", Math.ceil((tracker.resetTime - now) / 1000));
       res.setHeader("X-RateLimit-Limit", max);
       res.setHeader("X-RateLimit-Remaining", 0);

@@ -1,6 +1,6 @@
 import { LogEntry, Metrics, RouteStats, BlockedEvent } from "./types";
 import { monitorEventLoopDelay } from "perf_hooks";
-import { analyzeMetrics } from "./analyzer";
+import { analyzeMetrics } from "./tools/analyzer";
 import * as v8 from "v8";
 import * as os from "os";
 
@@ -115,7 +115,7 @@ export class MetricsStore {
     // Track per-route stats
     // Use normalized path (routePattern) if available, fallback to actual path
     const routeKey = `${log.method} ${log.routePattern || log.path}`;
-    
+
     if (!this.stats.routes[routeKey]) {
       // Prevent unbounded growth of the routes map
       if (Object.keys(this.stats.routes).length >= this.maxRoutes) {

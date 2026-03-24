@@ -5,8 +5,8 @@ import {
   CacheAdapter,
   LRUCacheEntry,
   CacheMiddleware,
-} from "./types";
-import { MetricsStore } from "./store";
+} from "../types";
+import { MetricsStore } from "../store";
 
 /**
  * In-memory LRU cache with TTL support.
@@ -144,7 +144,11 @@ export function createCacheMiddleware(
     return exclude.some((pattern) => {
       if (pattern instanceof RegExp) return pattern.test(url);
       if (typeof pattern === "string") {
-        return url === pattern || url.startsWith(pattern + "/") || url.startsWith(pattern + "?");
+        return (
+          url === pattern ||
+          url.startsWith(pattern + "/") ||
+          url.startsWith(pattern + "?")
+        );
       }
       return false;
     });

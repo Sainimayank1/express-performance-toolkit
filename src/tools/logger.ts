@@ -2,8 +2,8 @@ import { Request, Response, NextFunction } from "express";
 import onFinished from "on-finished";
 import * as fs from "fs";
 import * as path from "path";
-import { LoggerOptions, LogEntry } from "./types";
-import { MetricsStore } from "./store";
+import { LoggerOptions, LogEntry } from "../types";
+import { MetricsStore } from "../store";
 
 /**
  * Default log formatter for console output.
@@ -242,7 +242,10 @@ export function createLoggerMiddleware(
         queryCount: req.perfToolkit?.queryCount,
         bytesSent,
         userAgent: req.get("user-agent"),
-        ip: req.ip === "::1" || req.ip === "::ffff:127.0.0.1" ? "127.0.0.1" : req.ip,
+        ip:
+          req.ip === "::1" || req.ip === "::ffff:127.0.0.1"
+            ? "127.0.0.1"
+            : req.ip,
       };
 
       // Record in store

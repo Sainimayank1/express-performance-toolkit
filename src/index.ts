@@ -1,10 +1,10 @@
 import { Request, Response, NextFunction, Router } from "express";
 import { MetricsStore } from "./store";
-import { createCacheMiddleware, LRUCache } from "./cache";
-import { createCompressionMiddleware } from "./compression";
-import { createLoggerMiddleware } from "./logger";
-import { createQueryHelperMiddleware } from "./queryHelper";
-import { createRateLimiter } from "./rateLimit";
+import { createCacheMiddleware, LRUCache } from "./tools/cache";
+import { createCompressionMiddleware } from "./tools/compression";
+import { createLoggerMiddleware } from "./tools/logger";
+import { createQueryHelperMiddleware } from "./tools/queryHelper";
+import { createRateLimiter } from "./tools/rateLimit";
 import { createDashboardRouter } from "./auth/dashboardRouter";
 import {
   ToolkitOptions,
@@ -14,24 +14,10 @@ import {
   QueryHelperOptions,
   RateLimitOptions,
   DashboardOptions,
-  Metrics,
   CacheMiddleware,
+  ToolkitInstance,
 } from "./types";
-
-export interface ToolkitInstance {
-  /** The composed Express middleware */
-  middleware: (req: Request, res: Response, next: NextFunction) => void;
-  /** The dashboard Express router — mount this if you want the dashboard */
-  dashboardRouter: Router;
-  /** Get current metrics snapshot */
-  getMetrics: () => Metrics;
-  /** Reset all metrics */
-  resetMetrics: () => void;
-  /** Access the cache middleware (for manual cache control) */
-  cache: CacheMiddleware | null;
-  /** The underlying metrics store */
-  store: MetricsStore;
-}
+import { DEFAULT_DASHBOARD_PATH } from "./constants";
 
 /**
  * ⚡ Express Performance Toolkit
@@ -55,8 +41,6 @@ export interface ToolkitInstance {
 export function performanceToolkit(
   options: ToolkitOptions = {},
 ): ToolkitInstance {
-  const store = new MetricsStore({ maxLogs: options.maxLogs || 1000 });
-
   const middlewares: ((
     req: Request,
     res: Response,
@@ -64,11 +48,13 @@ export function performanceToolkit(
   ) => void)[] = [];
   let cacheMiddlewareInstance: CacheMiddleware | null = null;
 
+  const store = new MetricsStore({ maxLogs: options.maxLogs || 1000 });
+
   // ── Dashboard Config ─────────────────────────────────────
   const dashboardConfig = normalizeOption<DashboardOptions>(options.dashboard, {
     enabled: true,
   });
-  const dashboardExcludePath = dashboardConfig.path || "/__perf";
+  const dashboardExcludePath = dashboardConfig.path || DEFAULT_DASHBOARD_PATH;
 
   // ── Rate Limiter ─────────────────────────────────────────
   const rateLimitConfig = normalizeOption<RateLimitOptions>(options.rateLimit, {
@@ -187,10 +173,10 @@ function normalizeOption<T extends { enabled?: boolean }>(
 
 // ── Re-exports ─────────────────────────────────────────────
 export { MetricsStore } from "./store";
-export { LRUCache, createCacheMiddleware } from "./cache";
-export { createCompressionMiddleware } from "./compression";
-export { createLoggerMiddleware } from "./logger";
-export { createQueryHelperMiddleware } from "./queryHelper";
-export { createRateLimiter } from "./rateLimit";
+export { LRUCache, createCacheMiddleware } from "./tools/cache";
+export { createCompressionMiddleware } from "./tools/compression";
+export { createLoggerMiddleware } from "./tools/logger";
+export { createQueryHelperMiddleware } from "./tools/queryHelper";
+export { createRateLimiter } from "./tools/rateLimit";
 export { createDashboardRouter } from "./auth/dashboardRouter";
 export * from "./types";
