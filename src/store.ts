@@ -14,7 +14,7 @@ export class MetricsStore {
   private logs: LogEntry[];
   private blockedEvents: BlockedEvent[] = [];
   private histogram: ReturnType<typeof monitorEventLoopDelay>;
-  private lastCpuUsage: { user: number; system: number } | null = null;
+  private lastCpuUsage: { idle: number; total: number } | null = null;
   private lastCpuTimestamp: number | null = null;
   private stats: {
     totalRequests: number;
@@ -239,26 +239,35 @@ export class MetricsStore {
         uptimeFormatted: this.formatUptime(Date.now() - this.stats.startTime),
       },
       cpuUsage: (() => {
-        const cpu = process.cpuUsage();
+        const cpus = os.cpus();
         const now = Date.now();
         let percent = 0;
 
+        let totalIdle = 0;
+        let totalTick = 0;
+        for (const cpu of cpus) {
+          for (const type in cpu.times) {
+            totalTick += cpu.times[type as keyof typeof cpu.times];
+          }
+          totalIdle += cpu.times.idle;
+        }
+
         if (this.lastCpuUsage && this.lastCpuTimestamp) {
-          const userDiff = cpu.user - this.lastCpuUsage.user;
-          const sysDiff = cpu.system - this.lastCpuUsage.system;
-          const timeDiff = (now - this.lastCpuTimestamp) * 1000; // ms to microseconds
-          if (timeDiff > 0) {
-            percent = Math.min(100, Math.round(((userDiff + sysDiff) / timeDiff) * 100));
+          const idleDiff = totalIdle - this.lastCpuUsage.idle;
+          const totalDiff = totalTick - this.lastCpuUsage.total;
+          
+          if (totalDiff > 0) {
+            percent = 100 - Math.round((idleDiff / totalDiff) * 100);
           }
         }
 
-        this.lastCpuUsage = cpu;
+        this.lastCpuUsage = { idle: totalIdle, total: totalTick };
         this.lastCpuTimestamp = now;
 
         return {
-          user: cpu.user,
-          system: cpu.system,
-          percent,
+          user: 0,
+          system: 0,
+          percent: Math.max(0, Math.min(100, percent)),
         };
       })(),
       statusCodes: { ...this.stats.statusCodes },

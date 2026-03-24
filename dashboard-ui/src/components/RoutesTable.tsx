@@ -6,9 +6,9 @@ export function RoutesTable({
 }: {
   routes: Record<string, RouteStats>;
 }) {
-  const routeEntries = Object.entries(routes)
-    .sort(([, a], [, b]) => b.avgTime - a.avgTime)
-    .slice(0, 8); // top 8 slowest
+  const routeEntries = Object.entries(routes).sort(
+    ([, a], [, b]) => b.avgTime - a.avgTime,
+  );
 
   return (
     <div className="panel animate-in delay-2" style={{ maxHeight: "500px" }}>
