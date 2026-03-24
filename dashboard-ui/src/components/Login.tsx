@@ -30,7 +30,7 @@ export function Login({ onLoginSuccess }: LoginProps) {
       } else {
         setError(data.message || "Invalid credentials");
       }
-    } catch (err) {
+    } catch {
       setError("Failed to connect to server");
     } finally {
       setLoading(false);

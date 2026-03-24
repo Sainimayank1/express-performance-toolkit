@@ -57,7 +57,7 @@ export function createRateLimiter(
 
     if (isExcluded) return next();
 
-    let ip = req.ip || req.connection.remoteAddress || "unknown";
+    let ip = req.ip || req.socket.remoteAddress || "unknown";
     // Normalize IPv6 loopback to IPv4
     if (ip === "::1" || ip === "::ffff:127.0.0.1") ip = "127.0.0.1";
 

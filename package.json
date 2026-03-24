@@ -44,9 +44,7 @@
   "license": "MIT",
   "dependencies": {
     "compression": "^1.7.4",
-    "lucide-react": "^0.577.0",
-    "on-finished": "^2.4.1",
-    "recharts": "^3.8.0"
+    "on-finished": "^2.4.1"
   },
   "peerDependencies": {
     "express": ">=4.0.0"

@@ -15,7 +15,8 @@ export class MetricsStore {
   private blockedEvents: BlockedEvent[] = [];
   private histogram: ReturnType<typeof monitorEventLoopDelay>;
   private lastCpuUsage: { idle: number; total: number } | null = null;
-  private lastCpuTimestamp: number | null = null;
+  private currentCpuPercent: number = 0;
+  private cpuInterval: NodeJS.Timeout | null = null;
   private stats: {
     totalRequests: number;
     totalResponseTime: number;
@@ -50,6 +51,49 @@ export class MetricsStore {
     };
     this.histogram = monitorEventLoopDelay({ resolution: 10 });
     this.histogram.enable();
+    this.startCpuMonitoring();
+  }
+
+  private startCpuMonitoring(): void {
+    // Initial calculation
+    this.calculateCpuUsage();
+
+    // Update every second to provide stable metrics decoupled from dashboard polling frequency
+    this.cpuInterval = setInterval(() => {
+      this.calculateCpuUsage();
+    }, 1000);
+
+    // Ensure the interval doesn't keep the process alive
+    if (this.cpuInterval.unref) {
+      this.cpuInterval.unref();
+    }
+  }
+
+  private calculateCpuUsage(): void {
+    const cpus = os.cpus();
+    let totalIdle = 0;
+    let totalTick = 0;
+
+    for (const cpu of cpus) {
+      for (const type in cpu.times) {
+        totalTick += cpu.times[type as keyof typeof cpu.times];
+      }
+      totalIdle += cpu.times.idle;
+    }
+
+    if (this.lastCpuUsage) {
+      const idleDiff = totalIdle - this.lastCpuUsage.idle;
+      const totalDiff = totalTick - this.lastCpuUsage.total;
+
+      if (totalDiff > 0) {
+        this.currentCpuPercent = Math.max(
+          0,
+          Math.min(100, 100 - Math.round((idleDiff / totalDiff) * 100)),
+        );
+      }
+    }
+
+    this.lastCpuUsage = { idle: totalIdle, total: totalTick };
   }
 
   /** Add a request log entry to the ring buffer. */
@@ -238,38 +282,11 @@ export class MetricsStore {
         processId: process.pid,
         uptimeFormatted: this.formatUptime(Date.now() - this.stats.startTime),
       },
-      cpuUsage: (() => {
-        const cpus = os.cpus();
-        const now = Date.now();
-        let percent = 0;
-
-        let totalIdle = 0;
-        let totalTick = 0;
-        for (const cpu of cpus) {
-          for (const type in cpu.times) {
-            totalTick += cpu.times[type as keyof typeof cpu.times];
-          }
-          totalIdle += cpu.times.idle;
-        }
-
-        if (this.lastCpuUsage && this.lastCpuTimestamp) {
-          const idleDiff = totalIdle - this.lastCpuUsage.idle;
-          const totalDiff = totalTick - this.lastCpuUsage.total;
-          
-          if (totalDiff > 0) {
-            percent = 100 - Math.round((idleDiff / totalDiff) * 100);
-          }
-        }
-
-        this.lastCpuUsage = { idle: totalIdle, total: totalTick };
-        this.lastCpuTimestamp = now;
-
-        return {
-          user: 0,
-          system: 0,
-          percent: Math.max(0, Math.min(100, percent)),
-        };
-      })(),
+      cpuUsage: {
+        user: 0,
+        system: 0,
+        percent: this.currentCpuPercent,
+      },
       statusCodes: { ...this.stats.statusCodes },
       routes: { ...this.stats.routes },
       recentLogs: this.logs.slice(-100),
