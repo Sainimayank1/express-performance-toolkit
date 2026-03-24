@@ -4,7 +4,7 @@
   "description": "⚡ A powerful Express middleware that automatically optimizes your app with request caching, response compression, slow API detection, and a real-time performance dashboard.",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Sainimayank1/express-performance-toolkit"
+    "url": "git+https://github.com/Sainimayank1/express-performance-toolkit.git"
   },
   "bugs": {
     "url": "https://github.com/Sainimayank1/express-performance-toolkit/issues"

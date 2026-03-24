@@ -9,9 +9,7 @@
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
     "moduleResolution": "node",
-    "outDir": "./dist",
-    "rootDir": "."
+    "outDir": "./dist"
   },
-  "include": ["server.ts"],
-  "references": [{ "path": ".." }]
+  "include": ["server.ts"]
 }

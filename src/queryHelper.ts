@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { QueryHelperOptions } from './types';
+import { QueryHelperOptions } from "./types";
 
 /**
  * Create query optimization helper middleware.

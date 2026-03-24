@@ -5,7 +5,7 @@ import { createCompressionMiddleware } from "./compression";
 import { createLoggerMiddleware } from "./logger";
 import { createQueryHelperMiddleware } from "./queryHelper";
 import { createRateLimiter } from "./rateLimit";
-import { createDashboardRouter } from "./dashboard/dashboardRouter";
+import { createDashboardRouter } from "./dashboardRouter";
 import {
   ToolkitOptions,
   CacheOptions,
@@ -127,7 +127,9 @@ export function performanceToolkit(
   }
 
   if (dashboardConfig.enabled !== false) {
-    console.info(`[perf-toolkit] Dashboard available at: ${dashboardExcludePath}`);
+    console.info(
+      `[perf-toolkit] Dashboard available at: ${dashboardExcludePath}`,
+    );
   }
 
   // ── Dashboard Router ─────────────────────────────────────
@@ -190,5 +192,5 @@ export { createCompressionMiddleware } from "./compression";
 export { createLoggerMiddleware } from "./logger";
 export { createQueryHelperMiddleware } from "./queryHelper";
 export { createRateLimiter } from "./rateLimit";
-export { createDashboardRouter } from "./dashboard/dashboardRouter";
+export { createDashboardRouter } from "./dashboardRouter";
 export * from "./types";

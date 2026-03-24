@@ -1,7 +1,8 @@
 import express, { Router, Request, Response, NextFunction } from "express";
 import * as path from "path";
-import { MetricsStore } from "../store";
-import { DashboardOptions } from "../types";
+import * as fs from "fs";
+import { MetricsStore } from "./store";
+import { DashboardOptions } from "./types";
 
 /**
  * Simple session-less auth token based on the secret.
@@ -23,11 +24,14 @@ export function createDashboardRouter(
 
   // Default auth settings if none provided (Security by default)
   // To explicitly disable auth, pass auth: null or a falsy value in the config
-  const auth = options.auth === null ? null : (options.auth || {
-    username: "admin",
-    password: "perf-toolkit",
-    secret: "toolkit-secret",
-  });
+  const auth =
+    options.auth === null
+      ? null
+      : options.auth || {
+          username: "admin",
+          password: "perf-toolkit",
+          secret: "toolkit-secret",
+        };
 
   const mountPath = options.path || "/__perf";
 
@@ -103,8 +107,17 @@ export function createDashboardRouter(
     res.json({ success: true, message: "Metrics reset" });
   });
 
-  // Serve React Dashboard UI bundle
-  const uiPath = path.resolve(__dirname, "../../dist/dashboard-ui");
+  // Robust UI path resolution:
+  // 1. When running from 'dist/dashboardRouter.js', UI is at './dashboard-ui'
+  // 2. When running from 'src/dashboardRouter.ts' (ts-node), UI is at '../dashboard-ui/dist'
+  const distPath = path.resolve(__dirname, "./dashboard-ui");
+  const devPath = path.resolve(__dirname, "../dashboard-ui/dist");
+
+  // Prefer dist path if it exists (production), fallback to dev path
+  const uiPath = fs.existsSync(distPath) ? distPath : devPath;
+
+  // Note: Since 'path' doesn't have existSync in all environments, we use fs.existsSync if needed,
+  // but we can also just try to serve it or use a simple check.
   router.use("/", express.static(uiPath));
 
   return router;

@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import compressionMiddleware from 'compression';
-import { CompressionOptions } from './types';
+import { CompressionOptions } from "./types";
 
 /**
  * Create compression middleware with sensible defaults.

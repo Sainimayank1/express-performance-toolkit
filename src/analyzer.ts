@@ -94,9 +94,7 @@ export function analyzeMetrics(metrics: Metrics): Insight[] {
 
     // 4. Rate Limiting Insights
     if (stats.rateLimitHits > stats.count * 0.1) {
-      const blockRate = Math.round(
-        (stats.rateLimitHits / stats.count) * 100,
-      );
+      const blockRate = Math.round((stats.rateLimitHits / stats.count) * 100);
       insights.push({
         type: "info",
         key: `rate-limit-activity:${path}`,
