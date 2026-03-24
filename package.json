@@ -1,7 +1,7 @@
 {
   "name": "express-performance-toolkit",
   "version": "2.2.1",
-  "description": "⚡ A powerful Express middleware that automatically optimizes your app with request caching, response compression, slow API detection, and a real-time performance dashboard.",
+  "description": "A powerful Express middleware that automatically optimizes your app with request caching, response compression, slow API detection, and a real-time performance dashboard.",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Sainimayank1/express-performance-toolkit.git"
@@ -10,6 +10,10 @@
     "url": "https://github.com/Sainimayank1/express-performance-toolkit/issues"
   },
   "homepage": "https://github.com/Sainimayank1/express-performance-toolkit#readme",
+  "funding": {
+    "type": "github",
+    "url": "https://github.com/sponsors/Sainimayank1"
+  },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [
@@ -40,7 +44,10 @@
     "logging",
     "typescript"
   ],
-  "author": "Mayank Saini",
+  "author": "Mayank Saini <mayanksaini4455@gmail.com>",
+  "contributors": [
+    "Mayank Saini <mayanksaini4455@gmail.com>"
+  ],
   "license": "MIT",
   "dependencies": {
     "compression": "^1.7.4",
