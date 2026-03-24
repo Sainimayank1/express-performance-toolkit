@@ -161,8 +161,15 @@ export function createLoggerMiddleware(
       return next();
     }
 
-    // Byte counting logic
-    let bytesSent = 0;
+    // Snapshot socket bytes at the start of the request.
+    // After the response finishes, the difference gives us the actual
+    // bytes written to the wire (compressed body + headers).
+    const socketBytesStart = res.socket?.bytesWritten ?? 0;
+
+    // Body-level byte counting via res.write/res.end interception.
+    // This is the fallback for environments where socket tracking isn't available
+    // (e.g. supertest) and also accurately counts per-response body bytes.
+    let bodyBytesSent = 0;
     const originalWrite = res.write;
     const originalEnd = res.end;
 
@@ -172,7 +179,7 @@ export function createLoggerMiddleware(
       _callback?: any,
     ): boolean {
       if (chunk) {
-        bytesSent += Buffer.isBuffer(chunk)
+        bodyBytesSent += Buffer.isBuffer(chunk)
           ? chunk.length
           : Buffer.byteLength(
               chunk,
@@ -186,7 +193,7 @@ export function createLoggerMiddleware(
 
     res.end = function (chunk: any, encoding?: any, _callback?: any): Response {
       if (chunk && typeof chunk !== "function") {
-        bytesSent += Buffer.isBuffer(chunk)
+        bodyBytesSent += Buffer.isBuffer(chunk)
           ? chunk.length
           : Buffer.byteLength(
               chunk,
@@ -215,6 +222,12 @@ export function createLoggerMiddleware(
 
       // Extract route pattern if available (e.g. /users/:id)
       const routePattern = (req as any).route?.path;
+
+      // Prefer socket-level bytes (includes headers + compressed body).
+      // Fall back to body-level counting if socket tracking is unavailable.
+      const socketBytesEnd = finishedRes.socket?.bytesWritten ?? 0;
+      const socketDelta = socketBytesEnd - socketBytesStart;
+      const bytesSent = socketDelta > 0 ? socketDelta : bodyBytesSent;
 
       const entry: LogEntry = {
         method: req.method,
