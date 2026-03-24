@@ -77,7 +77,7 @@ export default function App() {
     return (
       <div className="dashboard-wrapper centered">
         <div className="panel error-state">
-          <AlertTriangle size={48} color="var(--accent-rose)" />
+          <AlertTriangle size={48} stroke="var(--accent-rose)" />
           <h2>Connection Lost</h2>
           <p>
             Unable to connect to the Performance API. Ensure your Express server
