@@ -1,6 +1,6 @@
-import { Request, Response, NextFunction, Router } from "express";
+import { Request, Response, NextFunction } from "express";
 import { MetricsStore } from "./store";
-import { createCacheMiddleware, LRUCache } from "./tools/cache";
+import { createCacheMiddleware } from "./tools/cache";
 import { createCompressionMiddleware } from "./tools/compression";
 import { createLoggerMiddleware } from "./tools/logger";
 import { createQueryHelperMiddleware } from "./tools/queryHelper";
@@ -189,7 +189,7 @@ export function performanceToolkit(
 }
 
 export { MetricsStore } from "./store";
-export { LRUCache, createCacheMiddleware } from "./tools/cache";
+export { createCacheMiddleware } from "./tools/cache";
 export { createCompressionMiddleware } from "./tools/compression";
 export { createLoggerMiddleware } from "./tools/logger";
 export { createQueryHelperMiddleware } from "./tools/queryHelper";

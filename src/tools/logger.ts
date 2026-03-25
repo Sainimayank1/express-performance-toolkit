@@ -169,11 +169,8 @@ export function createLoggerMiddleware(
     const originalWrite = res.write;
     const originalEnd = res.end;
 
-    res.write = function (
-      chunk: any,
-      encoding?: any,
-      _callback?: any,
-    ): boolean {
+    res.write = function (...args: any[]) {
+      const [chunk, encoding] = args;
       if (chunk) {
         bodyBytesSent += Buffer.isBuffer(chunk)
           ? chunk.length
@@ -184,10 +181,11 @@ export function createLoggerMiddleware(
                 : "utf8") as BufferEncoding,
             );
       }
-      return originalWrite.apply(res, arguments as any);
+      return originalWrite.apply(res, args as any);
     };
 
-    res.end = function (chunk: any, encoding?: any, _callback?: any): Response {
+    res.end = function (...args: any[]): Response {
+      const [chunk, encoding] = args;
       if (chunk && typeof chunk !== "function") {
         bodyBytesSent += Buffer.isBuffer(chunk)
           ? chunk.length
@@ -198,7 +196,7 @@ export function createLoggerMiddleware(
                 : "utf8") as BufferEncoding,
             );
       }
-      return originalEnd.apply(res, arguments as any);
+      return originalEnd.apply(res, args as any);
     };
 
     // Attach ept data to request
