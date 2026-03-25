@@ -1,4 +1,10 @@
-import { LogEntry, Metrics, RouteStats, BlockedEvent } from "./types";
+import {
+  LogEntry,
+  Metrics,
+  RouteStats,
+  BlockedEvent,
+  CompressedEvent,
+} from "./types";
 import { monitorEventLoopDelay } from "perf_hooks";
 import { analyzeMetrics } from "./tools/analyzer";
 import * as v8 from "v8";
@@ -13,6 +19,7 @@ export class MetricsStore {
   private maxRoutes: number = 200; // Cap unique routes to prevent memory leaks
   private logs: LogEntry[];
   private blockedEvents: BlockedEvent[] = [];
+  private compressedEvents: CompressedEvent[] = [];
   private histogram: ReturnType<typeof monitorEventLoopDelay>;
   private lastCpuUsage: { idle: number; total: number } | null = null;
   private currentCpuPercent: number = 0;
@@ -202,6 +209,32 @@ export class MetricsStore {
     this.stats.routes[routeKey].rateLimitHits++;
   }
 
+  recordCompression(
+    path: string,
+    method: string,
+    originalSize: number,
+    compressedSize: number,
+  ): void {
+    const ratio =
+      originalSize > 0
+        ? Math.round(((originalSize - compressedSize) / originalSize) * 100)
+        : 0;
+
+    this.compressedEvents.push({
+      path,
+      method,
+      originalSize,
+      compressedSize,
+      ratio,
+      timestamp: Date.now(),
+    });
+
+    // Keep only last 100 compressed events
+    if (this.compressedEvents.length > 100) {
+      this.compressedEvents.shift();
+    }
+  }
+
   recordCacheHit(): void {
     this.stats.cacheHits++;
   }
@@ -291,6 +324,7 @@ export class MetricsStore {
       routes: { ...this.stats.routes },
       recentLogs: this.logs.slice(-100),
       blockedEvents: [...this.blockedEvents],
+      compressedEvents: [...this.compressedEvents],
     };
 
     // Generate insights
@@ -314,6 +348,7 @@ export class MetricsStore {
     this.stats.routes = {};
     this.stats.startTime = Date.now();
     this.blockedEvents = [];
+    this.compressedEvents = [];
     this.histogram.disable();
     this.histogram = monitorEventLoopDelay({ resolution: 10 });
     this.histogram.enable();

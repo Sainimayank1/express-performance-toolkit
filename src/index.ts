@@ -66,10 +66,11 @@ function setupCache(
 function setupCompression(
   option: boolean | CompressionOptions | undefined,
   middlewares: any[],
+  store: MetricsStore,
 ): void {
   const config = normalizeOption<CompressionOptions>(option, { enabled: true });
   if (config.enabled !== false) {
-    middlewares.push(createCompressionMiddleware(config));
+    middlewares.push(createCompressionMiddleware(config, store));
   }
 }
 
@@ -164,7 +165,7 @@ export function performanceToolkit(
   setupRateLimiter(options.rateLimit, store, middlewares, dashboardPath);
   setupLogger(options.logging, store, middlewares, dashboardPath);
   const cache = setupCache(options.cache, store, middlewares, dashboardPath);
-  setupCompression(options.compression, middlewares);
+  setupCompression(options.compression, middlewares, store);
   setupQueryHelper(options.queryHelper, middlewares);
 
   if (dashboardConfig.enabled !== false) {

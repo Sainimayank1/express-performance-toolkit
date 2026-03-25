@@ -21,6 +21,7 @@ export const DEFAULT_RATE_LIMIT_OPTIONS = {
 
 // Compression
 export const NO_COMPRESSION_HEADER = "x-no-compression";
+export const CONTENT_ENCODING = ["gzip", "deflate", "br"];
 
 // Query Helper
 export const DEFAULT_QUERY_THRESHOLD = 10;

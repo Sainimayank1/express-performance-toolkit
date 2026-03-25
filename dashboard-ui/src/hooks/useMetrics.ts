@@ -18,6 +18,15 @@ export interface BlockedEvent {
   method: string;
 }
 
+export interface CompressedEvent {
+  path: string;
+  method: string;
+  originalSize: number;
+  compressedSize: number;
+  ratio: number;
+  timestamp: number;
+}
+
 export interface LogEntry {
   method: string;
   path: string;
@@ -88,6 +97,7 @@ export interface MetricsData {
   routes: Record<string, RouteStats>;
   recentLogs: LogEntry[];
   blockedEvents: BlockedEvent[];
+  compressedEvents: CompressedEvent[];
 }
 
 export function useMetrics(enabled: boolean = true) {

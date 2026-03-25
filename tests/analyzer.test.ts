@@ -44,6 +44,7 @@ describe("Smart Insights Engine", () => {
     routes: {},
     recentLogs: [],
     blockedEvents: [],
+    compressedEvents: [],
   };
 
   it("should suggest caching for slow routes", () => {

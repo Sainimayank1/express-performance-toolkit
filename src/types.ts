@@ -154,6 +154,15 @@ export interface BlockedEvent {
   method: string;
 }
 
+export interface CompressedEvent {
+  path: string;
+  method: string;
+  originalSize: number;
+  compressedSize: number;
+  ratio: number;
+  timestamp: number;
+}
+
 export interface RouteStats {
   count: number;
   totalTime: number;
@@ -200,6 +209,7 @@ export interface MetricSnapshot {
   routes: Record<string, RouteStats>;
   recentLogs: LogEntry[];
   blockedEvents: BlockedEvent[];
+  compressedEvents: CompressedEvent[];
   systemInfo: {
     nodeVersion: string;
     platform: string;
@@ -244,6 +254,7 @@ export interface Metrics {
   routes: Record<string, RouteStats>;
   recentLogs: LogEntry[];
   blockedEvents: BlockedEvent[];
+  compressedEvents: CompressedEvent[];
   systemInfo: {
     nodeVersion: string;
     platform: string;

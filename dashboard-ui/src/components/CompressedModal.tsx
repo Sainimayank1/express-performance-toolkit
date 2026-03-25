@@ -1,15 +1,20 @@
-import { X, ShieldAlert, Clock, Globe } from "lucide-react";
-import type { BlockedEvent } from "../hooks/useMetrics";
+import { X, Clock, FileArchive } from "lucide-react";
+import type { CompressedEvent } from "../hooks/useMetrics";
+import { fBytes } from "../utils/formatters";
 import { useEffect } from "react";
 import { createPortal } from "react-dom";
 
-interface BlockedModalProps {
+interface CompressedModalProps {
   isOpen: boolean;
   onClose: () => void;
-  events: BlockedEvent[];
+  events: CompressedEvent[];
 }
 
-export function BlockedModal({ isOpen, onClose, events }: BlockedModalProps) {
+export function CompressedModal({
+  isOpen,
+  onClose,
+  events,
+}: CompressedModalProps) {
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = "hidden";
@@ -31,12 +36,12 @@ export function BlockedModal({ isOpen, onClose, events }: BlockedModalProps) {
       >
         <div className="modal-header">
           <div className="modal-title">
-            <ShieldAlert
+            <FileArchive
               size={20}
-              className="val-rose"
+              className="val-emerald"
               style={{ marginRight: 10 }}
             />
-            Blocked IP Monitor
+            Compression Optimization Monitor
           </div>
           <button className="modal-close" onClick={onClose}>
             <X size={20} />
@@ -46,7 +51,7 @@ export function BlockedModal({ isOpen, onClose, events }: BlockedModalProps) {
         <div className="modal-body">
           {events.length === 0 ? (
             <div className="empty-state">
-              <p>No blocked traffic detected yet.</p>
+              <p>No compressed traffic detected yet.</p>
             </div>
           ) : (
             <div className="blocked-list">
@@ -54,9 +59,11 @@ export function BlockedModal({ isOpen, onClose, events }: BlockedModalProps) {
                 <thead>
                   <tr>
                     <th>Timestamp</th>
-                    <th>IP Address</th>
                     <th>Method</th>
                     <th>Path</th>
+                    <th>Original</th>
+                    <th>Compressed</th>
+                    <th>Ratio</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -77,19 +84,6 @@ export function BlockedModal({ isOpen, onClose, events }: BlockedModalProps) {
                         </div>
                       </td>
                       <td>
-                        <div
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 6,
-                            fontWeight: 600,
-                          }}
-                        >
-                          <Globe size={12} className="val-rose" />
-                          {event.ip}
-                        </div>
-                      </td>
-                      <td>
                         <span
                           className={`method-badge ${event.method.toLowerCase()}`}
                         >
@@ -101,6 +95,15 @@ export function BlockedModal({ isOpen, onClose, events }: BlockedModalProps) {
                       >
                         {event.path}
                       </td>
+                      <td style={{ color: "var(--text-400)" }}>
+                        {fBytes(event.originalSize)}
+                      </td>
+                      <td className="val-emerald" style={{ fontWeight: 600 }}>
+                        {fBytes(event.compressedSize)}
+                      </td>
+                      <td className="val-emerald" style={{ fontWeight: 600 }}>
+                        {event.ratio}%
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -111,12 +114,13 @@ export function BlockedModal({ isOpen, onClose, events }: BlockedModalProps) {
 
         <div className="modal-footer">
           <p style={{ fontSize: "0.8rem", color: "var(--text-400)" }}>
-            Showing last {events.length} security events. Use this data to
-            identify brute-force patterns.
+            Showing last {events.length} compression events. EPT uses
+            Gzip/Deflate/Brotli to reduce bandwidth usage and improve page load
+            times.
           </p>
         </div>
       </div>
     </div>,
-    document.body
+    document.body,
   );
 }

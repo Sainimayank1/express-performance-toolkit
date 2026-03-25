@@ -1,16 +1,21 @@
-import { Activity, Zap, AlertTriangle, Database, ShieldAlert, Server, HardDrive } from "lucide-react";
+import { Activity, Zap, AlertTriangle, Database, ShieldAlert, Server, FileArchive } from "lucide-react";
 import type { MetricsData } from "../hooks/useMetrics";
 import { fNum, fPct, fBytes } from "../utils/formatters";
 import { useState } from "react";
 import { BlockedModal } from "./BlockedModal";
+import { CompressedModal } from "./CompressedModal";
 
 export function KpiGrid({ data }: { data: MetricsData }) {
-  const [isModalOpen, setModalOpen] = useState(false);
+  const [isBlockedModalOpen, setBlockedModalOpen] = useState(false);
+  const [isCompressedModalOpen, setCompressedModalOpen] = useState(false);
 
   const rps =
     data.uptime > 0
       ? (data.totalRequests / (data.uptime / 1000)).toFixed(1)
       : "0";
+
+  const totalCompressed = data.compressedEvents?.length || 0;
+
   return (
     <div className="kpi-grid">
       <div className="kpi-card grad-1 animate-in delay-1">
@@ -116,9 +121,9 @@ export function KpiGrid({ data }: { data: MetricsData }) {
         <div className="kpi-subtext">Total bytes sent</div>
       </div>
 
-      <div className="kpi-card grad-1 animate-in delay-6">
+      <div className="kpi-card grad-2 animate-in delay-7" style={{ position: 'relative' }}>
         <div className="kpi-title">
-          <HardDrive
+          <FileArchive
             size={14}
             style={{
               display: "inline",
@@ -126,15 +131,31 @@ export function KpiGrid({ data }: { data: MetricsData }) {
               verticalAlign: "text-bottom",
             }}
           />{" "}
-          Avg Payload
+          Compressed Traffic
         </div>
-        <div className="kpi-value">
-          {fBytes(data.avgResponseSize)}
+        <div className="kpi-value val-emerald">{fNum(totalCompressed)}</div>
+        <div className="kpi-subtext" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span>Bandwidth Saved</span>
+          {totalCompressed > 0 && (
+            <button 
+              onClick={() => setCompressedModalOpen(true)}
+              style={{ 
+                background: 'rgba(16, 185, 129, 0.1)', 
+                border: '1px solid rgba(16, 185, 129, 0.2)',
+                borderRadius: '4px',
+                color: 'var(--accent-emerald)',
+                padding: '2px 8px',
+                fontSize: '0.7rem',
+                cursor: 'pointer'
+              }}
+            >
+              View Details
+            </button>
+          )}
         </div>
-        <div className="kpi-subtext">Per request average</div>
       </div>
 
-      <div className="kpi-card grad-4 animate-in delay-6" style={{ position: 'relative' }}>
+      <div className="kpi-card grad-4 animate-in delay-8" style={{ position: 'relative' }}>
         <div className="kpi-title">
           <ShieldAlert
             size={14}
@@ -151,7 +172,7 @@ export function KpiGrid({ data }: { data: MetricsData }) {
           <span>Rate limit 429</span>
           {data.rateLimitHits > 0 && (
             <button 
-              onClick={() => setModalOpen(true)}
+              onClick={() => setBlockedModalOpen(true)}
               style={{ 
                 background: 'rgba(244, 63, 94, 0.1)', 
                 border: '1px solid rgba(244, 63, 94, 0.2)',
@@ -169,9 +190,15 @@ export function KpiGrid({ data }: { data: MetricsData }) {
       </div>
 
       <BlockedModal 
-        isOpen={isModalOpen} 
-        onClose={() => setModalOpen(false)} 
+        isOpen={isBlockedModalOpen} 
+        onClose={() => setBlockedModalOpen(false)} 
         events={data.blockedEvents || []} 
+      />
+
+      <CompressedModal
+        isOpen={isCompressedModalOpen}
+        onClose={() => setCompressedModalOpen(false)}
+        events={data.compressedEvents || []}
       />
     </div>
   );
