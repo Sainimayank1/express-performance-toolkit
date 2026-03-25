@@ -16,7 +16,6 @@ describe("Dashboard Authentication", () => {
     });
 
     app.use(toolkit.middleware);
-    app.use("/ept", toolkit.dashboardRouter);
 
     // Should return 401 for protected data
     const resp = await request(app).get("/ept/api/metrics");
@@ -52,7 +51,6 @@ describe("Dashboard Authentication", () => {
     });
 
     app.use(toolkit.middleware);
-    app.use("/ept", toolkit.dashboardRouter);
 
     const loginResp = await request(app)
       .post("/ept/api/login")
@@ -66,12 +64,12 @@ describe("Dashboard Authentication", () => {
     const toolkit = performanceToolkit({
       dashboard: {
         enabled: true,
-        auth: null as any,
+        // @ts-expect-error - testing bypass
+        auth: null,
       },
     });
 
     app.use(toolkit.middleware);
-    app.use("/ept", toolkit.dashboardRouter);
 
     const resp = await request(app).get("/ept/api/metrics");
     expect(resp.status).toBe(200);

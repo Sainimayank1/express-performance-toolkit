@@ -17,7 +17,9 @@ describe("Integration Tests", () => {
       compression: false,
       dashboard: {
         enabled: true,
-        auth: null as any,
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-expect-error
+        auth: null,
       },
       logging: {
         enabled: true,
@@ -27,7 +29,6 @@ describe("Integration Tests", () => {
     });
 
     app.use(toolkit.middleware);
-    app.use("/ept", toolkit.dashboardRouter);
 
     app.get("/api/test", (_req, res) => {
       res.json({ message: "hello" });

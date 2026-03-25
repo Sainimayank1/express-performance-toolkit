@@ -28,7 +28,6 @@ const app = express();
 const toolkit = performanceToolkit();
 
 app.use(toolkit.middleware);
-app.use("/ept", toolkit.dashboardRouter);
 
 app.listen(3000, () => {
   console.log("Server is running on http://localhost:3000");
@@ -69,11 +68,20 @@ The quickest way to get started is to wrap your application with the toolkit:
 ```ts
 const toolkit = performanceToolkit({
   cache: { ttl: 30000, maxSize: 50 },
-  compression: true,
+  compression: {
+    enabled: true,
+    threshold: 1024,
+  },
   logging: {
     slowRequestThreshold: 500,
     file: "logs/ept.log",
     rotation: true,
+    maxDays: 7,
+  },
+  rateLimit: {
+    enabled: true,
+    windowMs: 1000,
+    max: 100,
   },
   dashboard: {
     enabled: true,

@@ -33,7 +33,7 @@ describe("LRUCache", () => {
     shortCache.set("key", "value");
     expect(shortCache.get("key")).toBe("value");
 
-    // Fast-forward by manipulating the internal state
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const entry = (shortCache as any).cache.get("key");
     entry.createdAt = Date.now() - 100; // expired
     expect(shortCache.get("key")).toBeNull();

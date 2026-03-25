@@ -142,7 +142,6 @@ function normalizeOption<T extends { enabled?: boolean }>(
  * });
  *
  * app.use(toolkit.middleware);
- * app.use('/ept', toolkit.dashboardRouter);
  * ```
  */
 export function performanceToolkit(
@@ -164,7 +163,7 @@ export function performanceToolkit(
   // 2. Setup Middlewares (Order is critical for performance/security)
   setupRateLimiter(options.rateLimit, store, middlewares, dashboardPath);
   setupLogger(options.logging, store, middlewares, dashboardPath);
-  setupCache(options.cache, store, middlewares, dashboardPath);
+  const cache = setupCache(options.cache, store, middlewares, dashboardPath);
   setupCompression(options.compression, middlewares, store);
   setupQueryHelper(options.queryHelper, middlewares);
 
@@ -190,7 +189,9 @@ export function performanceToolkit(
 
   return {
     middleware: mainRouter,
-  };
+    store,
+    cache,
+  } as unknown as ToolkitInstance;
 }
 
 export { MetricsStore } from "./store";

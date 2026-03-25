@@ -45,7 +45,9 @@ export function createDashboardRouter(
 
   // Authentication Middleware
   const requireAuth = (req: Request, res: Response, next: NextFunction) => {
-    if (!auth) return next();
+    if (!auth) {
+      return next();
+    }
 
     const sessionId = getSessionId(req);
     const session = sessionId ? sessionStore.get(sessionId) : null;
