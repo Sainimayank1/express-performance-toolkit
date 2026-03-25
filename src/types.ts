@@ -1,9 +1,14 @@
 import { Request, Response, NextFunction, Router } from "express";
+import { MetricsStore } from "./store";
 
 // ─── Toolkit Instance Type ────────────────────────────────────────────
 export interface ToolkitInstance {
   /** The composed Express middleware */
   middleware: Router;
+  /** Access the cache middleware (for manual cache control) */
+  cache: CacheMiddleware | null;
+  /** The underlying metrics store */
+  store: MetricsStore;
 }
 
 // ─── Configuration Types ────────────────────────────────────────────
@@ -80,7 +85,7 @@ export interface DashboardOptions {
   /** Dashboard mount path (default: '/ept') */
   path?: string;
   /** Authentication settings. If provided, user must login to see dashboard. */
-  auth?: DashboardAuthOptions;
+  auth?: DashboardAuthOptions | null;
 }
 
 export interface RateLimitOptions {

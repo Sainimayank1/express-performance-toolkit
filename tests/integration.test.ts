@@ -17,8 +17,6 @@ describe("Integration Tests", () => {
       compression: false,
       dashboard: {
         enabled: true,
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-expect-error
         auth: null,
       },
       logging: {

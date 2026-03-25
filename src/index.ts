@@ -191,7 +191,7 @@ export function performanceToolkit(
     middleware: mainRouter,
     store,
     cache,
-  } as unknown as ToolkitInstance;
+  } as ToolkitInstance;
 }
 
 export { MetricsStore } from "./store";

@@ -64,7 +64,6 @@ describe("Dashboard Authentication", () => {
     const toolkit = performanceToolkit({
       dashboard: {
         enabled: true,
-        // @ts-expect-error - testing bypass
         auth: null,
       },
     });
