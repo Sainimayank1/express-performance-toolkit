@@ -42,8 +42,8 @@ npm install express-performance-toolkit
 const toolkit = performanceToolkit({
   cache: { ttl: 30000, maxSize: 50 },
   compression: true,
-  logSlowRequests: {
-    slowThreshold: 500,
+  logging: {
+    slowRequestThreshold: 500,
     file: "logs/perf.log",
     rotation: true,
   },
@@ -63,15 +63,15 @@ View the dashboard at `http://localhost:3000/__perf`.
 
 ## Configuration
 
-| Option            | Type                | Default | Description                                     |
-| ----------------- | ------------------- | ------- | ----------------------------------------------- |
-| `cache`           | `boolean \| object` | `true`  | LRU caching with TTL, maxSize, exclude patterns |
-| `compression`     | `boolean \| object` | `true`  | Gzip/deflate compression                        |
-| `logSlowRequests` | `boolean \| object` | `true`  | Slow request detection, file logging, rotation  |
-| `rateLimit`       | `boolean \| object` | `false` | IP-based rate limiting                          |
-| `queryHelper`     | `boolean \| object` | `true`  | N+1 query detection                             |
-| `dashboard`       | `boolean \| object` | `true`  | Real-time dashboard with auth                   |
-| `maxLogs`         | `number`            | `1000`  | Max log entries in memory                       |
+| Option        | Type                | Default | Description                                     |
+| ------------- | ------------------- | ------- | ----------------------------------------------- |
+| `cache`       | `boolean \| object` | `true`  | LRU caching with TTL, maxSize, exclude patterns |
+| `compression` | `boolean \| object` | `true`  | Gzip/deflate compression                        |
+| `logging`     | `boolean \| object` | `true`  | Slow request detection, file logging, rotation  |
+| `rateLimit`   | `boolean \| object` | `false` | IP-based rate limiting                          |
+| `queryHelper` | `boolean \| object` | `true`  | N+1 query detection                             |
+| `dashboard`   | `boolean \| object` | `true`  | Real-time dashboard with auth                   |
+| `maxLogs`     | `number`            | `1000`  | Max log entries in memory                       |
 
 ## API
 

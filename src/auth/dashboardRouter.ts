@@ -3,7 +3,7 @@ import * as path from "path";
 import * as fs from "fs";
 import { MetricsStore } from "../store";
 import { DashboardOptions } from "../types";
-import { DEFAULT_AUTH_OPTIONS, DEFAULT_DASHBOARD_PATH } from "../constants";
+import { DEFAULT_AUTH_OPTIONS, DEFAULT_DASHBOARD_PATH, API_METRICS_PATH, API_RESET_PATH } from "../constants";
 import { SessionStore } from "./session";
 
 /**
@@ -107,12 +107,12 @@ export function createDashboardRouter(
   });
 
   // JSON metrics API endpoint (Protected)
-  router.get("/api/metrics", requireAuth, (_req: Request, res: Response) => {
+  router.get(API_METRICS_PATH, requireAuth, (_req: Request, res: Response) => {
     res.json(store.getMetrics());
   });
 
   // Reset metrics endpoint (Protected)
-  router.post("/api/reset", requireAuth, (_req: Request, res: Response) => {
+  router.post(API_RESET_PATH, requireAuth, (_req: Request, res: Response) => {
     store.reset();
     res.json({ success: true, message: "Metrics reset" });
   });

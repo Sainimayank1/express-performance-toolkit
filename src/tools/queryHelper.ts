@@ -1,5 +1,10 @@
 import { Request, Response, NextFunction } from "express";
 import { QueryHelperOptions } from "../types";
+import {
+  CONSOLE_RECENT_QUERIES,
+  DEFAULT_QUERY_PRE_LABEL,
+  DEFAULT_QUERY_THRESHOLD,
+} from "../constants";
 
 /**
  * Create query optimization helper middleware.
@@ -8,7 +13,7 @@ import { QueryHelperOptions } from "../types";
 export function createQueryHelperMiddleware(
   options: QueryHelperOptions = {},
 ): (req: Request, res: Response, next: NextFunction) => void {
-  const { threshold = 10 } = options;
+  const { threshold = DEFAULT_QUERY_THRESHOLD } = options;
 
   return (req: Request, _res: Response, next: NextFunction): void => {
     const queries: { label: string; timestamp: number }[] = [];
@@ -25,7 +30,8 @@ export function createQueryHelperMiddleware(
     req.perfToolkit.trackQuery = (label?: string): void => {
       req.perfToolkit!.queryCount++;
       queries.push({
-        label: label || `query-${req.perfToolkit!.queryCount}`,
+        label:
+          label || `${DEFAULT_QUERY_PRE_LABEL}-${req.perfToolkit!.queryCount}`,
         timestamp: Date.now(),
       });
 
@@ -39,7 +45,7 @@ export function createQueryHelperMiddleware(
         );
         console.warn(
           `[perf]   Recent queries: ${queries
-            .slice(-5)
+            .slice(-CONSOLE_RECENT_QUERIES)
             .map((q) => q.label)
             .join(", ")}`,
         );

@@ -4,18 +4,12 @@ import * as fs from "fs";
 import * as path from "path";
 import { LoggerOptions, LogEntry } from "../types";
 import { MetricsStore } from "../store";
-
-/**
- * Default log formatter for console output.
- */
-function defaultFormatter(entry: LogEntry): string {
-  const slow = entry.slow ? " [SLOW]" : "";
-  const cached = entry.cached ? " [CACHED]" : "";
-  const status = entry.statusCode;
-  const time = `${entry.responseTime}ms`;
-
-  return `[perf] ${entry.method} ${entry.path} → ${status} ${time}${cached}${slow}`;
-}
+import {
+  DEFAULT_LOG_OPTIONS,
+  API_METRICS_PATH,
+  API_RESET_PATH,
+  DEFAULT_DASHBOARD_PATH,
+} from "../constants";
 
 /**
  * Helper class for managing log file rotation and cleanup.
@@ -117,13 +111,13 @@ export function createLoggerMiddleware(
   store: MetricsStore,
 ): (req: Request, res: Response, next: NextFunction) => void {
   const {
-    slowThreshold = 1000,
-    console: logToConsole = true,
-    file: logFilePath,
-    rotation = false,
-    maxDays = 7,
-    exclude = [],
-    formatter = defaultFormatter,
+    slowRequestThreshold = DEFAULT_LOG_OPTIONS.slowRequestThreshold,
+    console: logToConsole = DEFAULT_LOG_OPTIONS.console,
+    file: logFilePath = DEFAULT_LOG_OPTIONS.file,
+    rotation = DEFAULT_LOG_OPTIONS.rotation,
+    maxDays = DEFAULT_LOG_OPTIONS.maxDays,
+    exclude = DEFAULT_LOG_OPTIONS.exclude,
+    formatter = DEFAULT_LOG_OPTIONS.formatter,
   } = options;
 
   let rotator: LogRotator | null = null;
@@ -154,9 +148,9 @@ export function createLoggerMiddleware(
 
     if (
       isExcluded ||
-      reqPath.includes("/metrics") ||
-      reqPath.includes("/reset") ||
-      reqPath.includes("/__perf")
+      reqPath.includes(API_METRICS_PATH) ||
+      reqPath.includes(API_RESET_PATH) ||
+      reqPath.includes(DEFAULT_DASHBOARD_PATH)
     ) {
       return next();
     }
@@ -218,7 +212,7 @@ export function createLoggerMiddleware(
 
     onFinished(res, (_err, finishedRes) => {
       const responseTime = Date.now() - startTime;
-      const isSlow = responseTime >= slowThreshold;
+      const isSlow = responseTime >= slowRequestThreshold;
 
       // Extract route pattern if available (e.g. /users/:id)
       const routePattern = (req as any).route?.path;

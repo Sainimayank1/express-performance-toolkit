@@ -86,8 +86,8 @@ export function performanceToolkit(
     middlewares.push(createQueryHelperMiddleware(queryConfig));
   }
 
-  // ── Logger (slow request detection) ──────────────────────
-  const loggerConfig = normalizeOption<LoggerOptions>(options.logSlowRequests, {
+  // ── Logger ──────────────────────
+  const loggerConfig = normalizeOption<LoggerOptions>(options.logging, {
     enabled: true,
   });
   if (loggerConfig.enabled !== false) {
@@ -166,8 +166,9 @@ function normalizeOption<T extends { enabled?: boolean }>(
 ): T {
   if (value === true) return { ...defaults, enabled: true };
   if (value === false) return { ...defaults, enabled: false };
-  if (typeof value === "object")
-    return { ...defaults, enabled: true, ...value };
+  if (value && typeof value === "object") {
+    return { ...defaults, ...value };
+  }
   return defaults;
 }
 

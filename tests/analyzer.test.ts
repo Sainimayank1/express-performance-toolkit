@@ -1,5 +1,5 @@
-import { analyzeMetrics } from "../src/analyzer";
-import { Metrics } from "../src/types";
+import { analyzeMetrics } from "../src/tools/analyzer";
+import { Metrics, Insight } from "../src/types";
 
 describe("Smart Insights Engine", () => {
   const mockMetrics: Metrics = {
@@ -64,9 +64,9 @@ describe("Smart Insights Engine", () => {
     };
 
     const insights = analyzeMetrics(metrics);
-    expect(insights.some((i) => i.title.includes("Caching Opportunity"))).toBe(
-      true
-    );
+    expect(
+      insights.some((i: Insight) => i.title.includes("Caching Opportunity")),
+    ).toBe(true);
   });
 
   it("should warn about N+1 queries", () => {
@@ -87,7 +87,9 @@ describe("Smart Insights Engine", () => {
     };
 
     const insights = analyzeMetrics(metrics);
-    expect(insights.some((i) => i.title.includes("N+1 Query"))).toBe(true);
+    expect(insights.some((i: Insight) => i.title.includes("N+1 Query"))).toBe(
+      true,
+    );
   });
 
   it("should warn about heavy payloads", () => {
@@ -108,7 +110,9 @@ describe("Smart Insights Engine", () => {
     };
 
     const insights = analyzeMetrics(metrics);
-    expect(insights.some((i) => i.title.includes("Heavy Payload"))).toBe(true);
+    expect(
+      insights.some((i: Insight) => i.title.includes("Heavy Payload")),
+    ).toBe(true);
   });
 
   it("should warn about event loop lag", () => {
@@ -118,8 +122,8 @@ describe("Smart Insights Engine", () => {
     };
 
     const insights = analyzeMetrics(metrics);
-    expect(insights.some((i) => i.title.includes("Event Loop Lagging"))).toBe(
-      true
-    );
+    expect(
+      insights.some((i: Insight) => i.title.includes("Event Loop Lagging")),
+    ).toBe(true);
   });
 });

@@ -56,7 +56,7 @@ export interface LoggerOptions {
   /** Enable request logging (default: true) */
   enabled?: boolean;
   /** Slow request threshold in ms (default: 1000) */
-  slowThreshold?: number;
+  slowRequestThreshold?: number;
   /** Log to console (default: true) */
   console?: boolean;
   /** Log to file path (optional) */
@@ -116,8 +116,8 @@ export interface ToolkitOptions {
   cache?: boolean | CacheOptions;
   /** Compression configuration — pass true for defaults or an object */
   compression?: boolean | CompressionOptions;
-  /** Slow request detection — pass true for defaults or an object */
-  logSlowRequests?: boolean | LoggerOptions;
+  /** Request logging and slow API detection — pass true for defaults or an object */
+  logging?: boolean | LoggerOptions;
   /** Query optimization helper */
   queryHelper?: boolean | QueryHelperOptions;
   /** Performance dashboard */

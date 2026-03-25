@@ -10,16 +10,18 @@ describe("Integration Tests", () => {
 
     const toolkit = performanceToolkit({
       cache: {
+        enabled: true,
         ttl: 60000,
         exclude: ["/no-cache"],
       },
-      compression: false, // disable for easier testing
+      compression: false,
       dashboard: {
         enabled: true,
         auth: null as any,
       },
-      logSlowRequests: {
-        slowThreshold: 100,
+      logging: {
+        enabled: true,
+        slowRequestThreshold: 100,
         console: false,
       },
     });

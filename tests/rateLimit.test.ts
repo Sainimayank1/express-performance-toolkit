@@ -7,6 +7,7 @@ describe('Smart Rate Limiter', () => {
     const app = express();
     const toolkit = performanceToolkit({
       rateLimit: {
+        enabled: true,
         windowMs: 1000,
         max: 3,
       }
@@ -24,6 +25,7 @@ describe('Smart Rate Limiter', () => {
     const app = express();
     const toolkit = performanceToolkit({
       rateLimit: {
+        enabled: true,
         windowMs: 5000, // 5 seconds
         max: 2,
         message: 'Rate limit exceeded'
@@ -59,6 +61,7 @@ describe('Smart Rate Limiter', () => {
     const app = express();
     const toolkit = performanceToolkit({
       rateLimit: {
+        enabled: true,
         windowMs: 1000,
         max: 1,
       }
@@ -82,6 +85,7 @@ describe('Smart Rate Limiter', () => {
     const app = express();
     const toolkit = performanceToolkit({
       rateLimit: {
+        enabled: true,
         windowMs: 1000,
         max: 1,
         methods: ['POST']

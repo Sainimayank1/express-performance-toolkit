@@ -6,7 +6,7 @@ describe("Bandwidth Tracking", () => {
   it("should track response payload size correctly", async () => {
     const app = express();
     const toolkit = performanceToolkit({
-      logSlowRequests: { console: false },
+      logging: { console: false },
     });
 
     app.use(toolkit.middleware);
@@ -52,7 +52,7 @@ describe("Bandwidth Tracking", () => {
   it("should handle chunked res.write calls", async () => {
     const app = express();
     const toolkit = performanceToolkit({
-      logSlowRequests: { console: false },
+      logging: { console: false },
     });
 
     app.use(toolkit.middleware);

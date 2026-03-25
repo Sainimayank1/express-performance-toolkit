@@ -7,6 +7,7 @@ const PORT = process.env.PORT || 3000;
 // ── Initialize Performance Toolkit ──────────────────────────
 const toolkit = performanceToolkit({
   cache: {
+    enabled: true,
     ttl: 30000, // 30s cache TTL
     maxSize: 50,
     exclude: ["/api/random", "/api/large", "/__perf"],
@@ -16,14 +17,16 @@ const toolkit = performanceToolkit({
     threshold: 1024, // 1KB,
     level: 6,
   },
-  logSlowRequests: {
-    slowThreshold: 500, // Flag requests > 500ms as slow
+  logging: {
+    enabled: true,
+    slowRequestThreshold: 500, // Flag requests > 500ms as slow
     console: true,
     file: "logs/performance.log", // Log all requests to this file
     rotation: true, // Automatically rotate daily
     maxDays: 7, // Keep 7 days of logs
   },
   queryHelper: {
+    enabled: true,
     threshold: 5,
   },
   rateLimit: {
