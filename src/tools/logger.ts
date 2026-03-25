@@ -93,7 +93,7 @@ class LogRotator {
             fs.unlink(path.join(this.logDir, file), (unlinkErr) => {
               if (unlinkErr)
                 console.error(
-                  `[perf-toolkit] Failed to delete old log: ${file}`,
+                  `[Express Performance Toolkit] Failed to delete old log: ${file}`,
                 );
             });
           }
@@ -125,7 +125,9 @@ export function createLoggerMiddleware(
     try {
       rotator = new LogRotator(logFilePath, rotation, maxDays);
     } catch (err) {
-      console.error(`[perf-toolkit] Failed to initialize log rotator: ${err}`);
+      console.error(
+        `[Express Performance Toolkit] Failed to initialize log rotator: ${err}`,
+      );
     }
   }
 
@@ -199,13 +201,13 @@ export function createLoggerMiddleware(
       return originalEnd.apply(res, arguments as any);
     };
 
-    // Attach perf data to request
-    if (!req.perfToolkit) {
-      req.perfToolkit = {
+    // Attach ept data to request
+    if (!req.ept) {
+      req.ept = {
         startTime,
         queryCount: 0,
         trackQuery: () => {
-          req.perfToolkit!.queryCount++;
+          req.ept!.queryCount++;
         },
       };
     }
@@ -232,8 +234,8 @@ export function createLoggerMiddleware(
         timestamp: Date.now(),
         slow: isSlow,
         cached: res.getHeader("X-Cache") === "HIT",
-        highQueries: req.perfToolkit?.highQueries || false,
-        queryCount: req.perfToolkit?.queryCount,
+        highQueries: req.ept?.highQueries || false,
+        queryCount: req.ept?.queryCount,
         bytesSent,
         userAgent: req.get("user-agent"),
         ip:

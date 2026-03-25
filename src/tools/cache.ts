@@ -5,8 +5,11 @@ import {
   CacheAdapter,
   LRUCacheEntry,
   CacheMiddleware,
+  RedisConfig,
 } from "../types";
 import { MetricsStore } from "../store";
+import { DEFAULT_CACHE_OPTIONS } from "../constants";
+import Redis from "ioredis";
 
 /**
  * In-memory LRU cache with TTL support.
@@ -17,8 +20,8 @@ export class LRUCache<T = CacheEntry> implements CacheAdapter<T> {
   private cache: Map<string, LRUCacheEntry<T>>;
 
   constructor(options: { maxSize?: number; ttl?: number } = {}) {
-    this.maxSize = options.maxSize || 100;
-    this.ttl = options.ttl || 60000;
+    this.maxSize = options.maxSize || DEFAULT_CACHE_OPTIONS.maxSize;
+    this.ttl = options.ttl || DEFAULT_CACHE_OPTIONS.ttl;
     this.cache = new Map();
   }
 
@@ -73,41 +76,76 @@ export class LRUCache<T = CacheEntry> implements CacheAdapter<T> {
 /**
  * Create a Redis cache adapter (requires ioredis as peer dependency).
  */
-function createRedisAdapter(
-  redisConfig: Record<string, unknown>,
-): CacheAdapter | null {
+function createRedisAdapter(redisConfig: RedisConfig): CacheAdapter | null {
   try {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const Redis = require("ioredis");
-    const client = new Redis(redisConfig);
+    const client = new Redis({
+      ...redisConfig,
+      // Disable retry strategy if we want immediate fallback
+      retryStrategy: (times: number) => {
+        if (times > 3) return null; // stop retrying after 3 attempts
+        return Math.min(times * 50, 2000);
+      },
+    });
+
+    client.on("error", (err) => {
+      console.error(
+        `[Express Performance Toolkit] Redis error: ${err.message}`,
+      );
+    });
+
     const prefix = (redisConfig.prefix as string) || "ept:";
     const ttl = (redisConfig.ttl as number) || 60;
 
     return {
       async get(key: string): Promise<CacheEntry | null> {
-        const data = await client.get(`${prefix}${key}`);
-        return data ? JSON.parse(data) : null;
+        try {
+          const data = await client.get(`${prefix}${key}`);
+          return data ? JSON.parse(data) : null;
+        } catch (err) {
+          console.error(
+            `[Express Performance Toolkit] Redis GET failed: ${err}`,
+          );
+          return null;
+        }
       },
       async set(key: string, value: CacheEntry): Promise<void> {
-        await client.setex(`${prefix}${key}`, ttl, JSON.stringify(value));
+        try {
+          await client.setex(`${prefix}${key}`, ttl, JSON.stringify(value));
+        } catch (err) {
+          console.error(
+            `[Express Performance Toolkit] Redis SET failed: ${err}`,
+          );
+        }
       },
       async has(key: string): Promise<boolean> {
-        return (await client.exists(`${prefix}${key}`)) === 1;
+        try {
+          return (await client.exists(`${prefix}${key}`)) === 1;
+        } catch {
+          return false;
+        }
       },
       async delete(key: string): Promise<void> {
-        await client.del(`${prefix}${key}`);
+        try {
+          await client.del(`${prefix}${key}`);
+        } catch {
+          // ignore
+        }
       },
       async clear(): Promise<void> {
-        const keys = await client.keys(`${prefix}*`);
-        if (keys.length > 0) await client.del(...keys);
+        try {
+          const keys = await client.keys(`${prefix}*`);
+          if (keys.length > 0) await client.del(...keys);
+        } catch {
+          // ignore
+        }
       },
       get size(): number {
         return -1; // Cannot easily get size from Redis
       },
     };
-  } catch {
+  } catch (err) {
     console.warn(
-      "[express-performance-toolkit] ioredis not installed. Falling back to in-memory cache.",
+      `[Express Performance Toolkit] Failed to initialize Redis: ${err}. Falling back to in-memory cache.`,
     );
     return null;
   }
@@ -121,11 +159,11 @@ export function createCacheMiddleware(
   store?: MetricsStore,
 ): CacheMiddleware {
   const {
-    ttl = 60000,
-    maxSize = 100,
-    exclude = [],
-    redis = null,
-    methods = ["GET"],
+    ttl = DEFAULT_CACHE_OPTIONS.ttl,
+    maxSize = DEFAULT_CACHE_OPTIONS.maxSize,
+    exclude = DEFAULT_CACHE_OPTIONS.exclude,
+    redis = DEFAULT_CACHE_OPTIONS.redis,
+    methods = DEFAULT_CACHE_OPTIONS.methods,
   } = options;
 
   let cacheAdapter: CacheAdapter;
@@ -187,8 +225,10 @@ export function createCacheMiddleware(
         res.status(entry.statusCode || 200).send(entry.body);
         return;
       }
-    } catch {
-      // Cache read failed — continue to handler
+    } catch (err) {
+      console.error(
+        `[Express Performance Toolkit] Cache read failed — continue to handler: ${err}`,
+      );
     }
 
     if (store) store.recordCacheMiss();
@@ -214,8 +254,10 @@ export function createCacheMiddleware(
           ) {
             store.setCacheSize(cacheAdapter.size);
           }
-        } catch {
-          // Cache write failed — ignore
+        } catch (err) {
+          console.error(
+            `[Express Performance Toolkit] Cache write failed: ${err}`,
+          );
         }
       }
 

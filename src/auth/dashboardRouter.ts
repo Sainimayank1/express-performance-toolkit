@@ -3,7 +3,12 @@ import * as path from "path";
 import * as fs from "fs";
 import { MetricsStore } from "../store";
 import { DashboardOptions } from "../types";
-import { DEFAULT_AUTH_OPTIONS, DEFAULT_DASHBOARD_PATH, API_METRICS_PATH, API_RESET_PATH } from "../constants";
+import {
+  DEFAULT_AUTH_OPTIONS,
+  DEFAULT_DASHBOARD_PATH,
+  API_METRICS_PATH,
+  API_RESET_PATH,
+} from "../constants";
 import { SessionStore } from "./session";
 
 /**
@@ -38,7 +43,7 @@ export function createDashboardRouter(
   // Helper to extract session ID from cookie
   const getSessionId = (req: Request): string | null => {
     const cookie = req.headers.cookie || "";
-    const match = cookie.match(/perf-auth=([^;]+)/);
+    const match = cookie.match(/ept-auth=([^;]+)/);
     return match ? match[1] : null;
   };
 
@@ -73,7 +78,7 @@ export function createDashboardRouter(
       // Set cookie with HttpOnly and reasonable maxAge
       res.setHeader(
         "Set-Cookie",
-        `perf-auth=${sessionId}; Path=${mountPath}; HttpOnly; Max-Age=86400; SameSite=Lax`,
+        `ept-auth=${sessionId}; Path=${mountPath}; HttpOnly; Max-Age=86400; SameSite=Lax`,
       );
       return res.json({ success: true });
     }
@@ -90,7 +95,7 @@ export function createDashboardRouter(
 
     res.setHeader(
       "Set-Cookie",
-      `perf-auth=; Path=${mountPath}; HttpOnly; Max-Age=0`,
+      `ept-auth=; Path=${mountPath}; HttpOnly; Max-Age=0`,
     );
     res.json({ success: true });
   });

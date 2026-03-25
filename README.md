@@ -44,7 +44,7 @@ const toolkit = performanceToolkit({
   compression: true,
   logging: {
     slowRequestThreshold: 500,
-    file: "logs/perf.log",
+    file: "logs/ept.log",
     rotation: true,
   },
   rateLimit: { enabled: true, windowMs: 60000, max: 100 },
@@ -87,7 +87,15 @@ toolkit.cache?.delete("GET /api/users");
 toolkit.resetMetrics();
 ```
 
-## Examples
+## Redis Testing
+
+You can easily test Redis caching in the example server by setting the `USE_REDIS` environment variable:
+
+```bash
+USE_REDIS=true npm run example
+```
+
+This will attempt to connect to a Redis server at `127.0.0.1:6379`. If Redis is not available, the toolkit will automatically fall back to the in-memory LRU cache.
 
 Clone the repo and run the example server:
 

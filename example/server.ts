@@ -11,6 +11,12 @@ const toolkit = performanceToolkit({
     ttl: 30000, // 30s cache TTL
     maxSize: 50,
     exclude: ["/api/random", "/api/large", "/__perf"],
+    // Optional Redis configuration for testing
+    redis: process.env.REDIS_URL
+      ? { host: process.env.REDIS_URL } // e.g., '127.0.0.1'
+      : process.env.USE_REDIS === "true"
+        ? { host: "127.0.0.1", port: 6379 }
+        : null,
   },
   compression: {
     enabled: true,
@@ -117,7 +123,7 @@ app.get("/api/posts", (req: Request, res: Response) => {
   // Simulate multiple DB queries (potential N+1)
   const posts = [];
   for (let i = 0; i < 12; i++) {
-    req.perfToolkit?.trackQuery(`SELECT * FROM comments WHERE post_id=${i}`);
+    req.ept?.trackQuery(`SELECT * FROM comments WHERE post_id=${i}`);
     posts.push({
       id: i,
       title: `Post ${i}`,

@@ -19,32 +19,31 @@ export function createQueryHelperMiddleware(
     const queries: { label: string; timestamp: number }[] = [];
 
     // Initialize or extend perfToolkit on the request
-    if (!req.perfToolkit) {
-      req.perfToolkit = {
+    if (!req.ept) {
+      req.ept = {
         startTime: Date.now(),
         queryCount: 0,
         trackQuery: () => {},
       };
     }
 
-    req.perfToolkit.trackQuery = (label?: string): void => {
-      req.perfToolkit!.queryCount++;
+    req.ept.trackQuery = (label?: string): void => {
+      req.ept!.queryCount++;
       queries.push({
-        label:
-          label || `${DEFAULT_QUERY_PRE_LABEL}-${req.perfToolkit!.queryCount}`,
+        label: label || `${DEFAULT_QUERY_PRE_LABEL}-${req.ept!.queryCount}`,
         timestamp: Date.now(),
       });
 
       // Warn if threshold exceeded
-      if (req.perfToolkit!.queryCount === threshold) {
-        req.perfToolkit!.highQueries = true;
+      if (req.ept!.queryCount === threshold) {
+        req.ept!.highQueries = true;
 
         console.warn(
-          `[perf] ⚠️  N+1 Alert: ${req.method} ${req.originalUrl || req.url} ` +
+          `[ept] ⚠️  N+1 Alert: ${req.method} ${req.originalUrl || req.url} ` +
             `has made ${threshold}+ queries. Consider optimizing with batch/join queries.`,
         );
         console.warn(
-          `[perf]   Recent queries: ${queries
+          `[ept]   Recent queries: ${queries
             .slice(-CONSOLE_RECENT_QUERIES)
             .map((q) => q.label)
             .join(", ")}`,

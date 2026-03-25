@@ -81,7 +81,7 @@ export interface QueryHelperOptions {
 export interface DashboardAuthOptions {
   /** Admin username (default: 'admin') */
   username?: string;
-  /** Admin password (default: 'perf-toolkit') */
+  /** Admin password (default: 'ept-toolkit') */
   password?: string;
 }
 
@@ -294,7 +294,7 @@ export interface CacheMiddleware {
 declare global {
   namespace Express {
     interface Request {
-      perfToolkit?: {
+      ept?: {
         startTime: number;
         queryCount: number;
         highQueries?: boolean;

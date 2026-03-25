@@ -69,23 +69,6 @@ export function performanceToolkit(
     middlewares.push(createRateLimiter(store, rateLimitConfig));
   }
 
-  // ── Compression ──────────────────────────────────────────
-  const compressionConfig = normalizeOption<CompressionOptions>(
-    options.compression,
-    { enabled: true },
-  );
-  if (compressionConfig.enabled !== false) {
-    middlewares.push(createCompressionMiddleware(compressionConfig));
-  }
-
-  // ── Query Helper ─────────────────────────────────────────
-  const queryConfig = normalizeOption<QueryHelperOptions>(options.queryHelper, {
-    enabled: false,
-  });
-  if (queryConfig.enabled !== false) {
-    middlewares.push(createQueryHelperMiddleware(queryConfig));
-  }
-
   // ── Logger ──────────────────────
   const loggerConfig = normalizeOption<LoggerOptions>(options.logging, {
     enabled: true,
@@ -112,9 +95,26 @@ export function performanceToolkit(
     middlewares.push(cacheMiddlewareInstance);
   }
 
+  // ── Compression ──────────────────────────────────────────
+  const compressionConfig = normalizeOption<CompressionOptions>(
+    options.compression,
+    { enabled: true },
+  );
+  if (compressionConfig.enabled !== false) {
+    middlewares.push(createCompressionMiddleware(compressionConfig));
+  }
+
+  // ── Query Helper ─────────────────────────────────────────
+  const queryConfig = normalizeOption<QueryHelperOptions>(options.queryHelper, {
+    enabled: false,
+  });
+  if (queryConfig.enabled !== false) {
+    middlewares.push(createQueryHelperMiddleware(queryConfig));
+  }
+
   if (dashboardConfig.enabled !== false) {
     console.info(
-      `[perf-toolkit] Dashboard available at: ${dashboardExcludePath}`,
+      `[Express Performance Toolkit] Dashboard available at: ${dashboardExcludePath}`,
     );
   }
 

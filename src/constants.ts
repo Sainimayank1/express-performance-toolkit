@@ -3,7 +3,7 @@ import { LogEntry } from "./types";
 // Auth
 export const DEFAULT_AUTH_OPTIONS = {
   username: "admin",
-  password: "perf-toolkit",
+  password: "ept-toolkit",
 };
 
 // Dashboard
@@ -47,5 +47,14 @@ export function defaultFormatter(entry: LogEntry): string {
   const status = entry.statusCode;
   const time = `${entry.responseTime}ms`;
 
-  return `[perf] ${entry.method} ${entry.path} → ${status} ${time}${cached}${slow}`;
+  return `[ept] ${entry.method} ${entry.path} → ${status} ${time}${cached}${slow}`;
 }
+
+// Cache
+export const DEFAULT_CACHE_OPTIONS = {
+  ttl: 60000,
+  maxSize: 100,
+  exclude: [],
+  redis: null,
+  methods: ["GET"],
+};
