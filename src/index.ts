@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from "express";
+import { Request, Response, NextFunction, Router } from "express";
 import { MetricsStore } from "./store";
 import { createCacheMiddleware } from "./tools/cache";
 import { createCompressionMiddleware } from "./tools/compression";
@@ -164,9 +164,21 @@ export function performanceToolkit(
   // 2. Setup Middlewares (Order is critical for performance/security)
   setupRateLimiter(options.rateLimit, store, middlewares, dashboardPath);
   setupLogger(options.logging, store, middlewares, dashboardPath);
-  const cache = setupCache(options.cache, store, middlewares, dashboardPath);
+  setupCache(options.cache, store, middlewares, dashboardPath);
   setupCompression(options.compression, middlewares, store);
   setupQueryHelper(options.queryHelper, middlewares);
+
+  const dashboardRouter = createDashboardRouter(store, {
+    ...dashboardConfig,
+    path: dashboardPath,
+  });
+
+  const mainRouter = Router();
+
+  // Mount dashboard internally
+  if (dashboardConfig.enabled !== false) {
+    mainRouter.use(dashboardPath, dashboardRouter);
+  }
 
   if (dashboardConfig.enabled !== false) {
     console.info(
@@ -174,18 +186,10 @@ export function performanceToolkit(
     );
   }
 
-  const dashboardRouter = createDashboardRouter(store, {
-    ...dashboardConfig,
-    path: DEFAULT_DASHBOARD_PATH,
-  });
+  mainRouter.use(createComposedMiddleware(middlewares));
 
   return {
-    middleware: createComposedMiddleware(middlewares),
-    dashboardRouter,
-    getMetrics: () => store.getMetrics(),
-    resetMetrics: () => store.reset(),
-    cache,
-    store,
+    middleware: mainRouter,
   };
 }
 

@@ -1,20 +1,9 @@
 import { Request, Response, NextFunction, Router } from "express";
-import { MetricsStore } from "./store";
 
 // ─── Toolkit Instance Type ────────────────────────────────────────────
 export interface ToolkitInstance {
   /** The composed Express middleware */
-  middleware: (req: Request, res: Response, next: NextFunction) => void;
-  /** The dashboard Express router — mount this if you want the dashboard */
-  dashboardRouter: Router;
-  /** Get current metrics snapshot */
-  getMetrics: () => Metrics;
-  /** Reset all metrics */
-  resetMetrics: () => void;
-  /** Access the cache middleware (for manual cache control) */
-  cache: CacheMiddleware | null;
-  /** The underlying metrics store */
-  store: MetricsStore;
+  middleware: Router;
 }
 
 // ─── Configuration Types ────────────────────────────────────────────

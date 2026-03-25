@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import express, { Request, Response } from "express";
 import { performanceToolkit } from "../src/index";
 
@@ -40,21 +41,12 @@ const toolkit = performanceToolkit({
     windowMs: 2 * 60 * 1000, // 2 minutes window
     max: 10, // 10 requests per window
   },
-  dashboard: {
-    enabled: true,
-    path: "/ept",
-    auth: {
-      username: "admin",
-      password: "admin",
-    },
-  },
+  dashboard: true,
 });
 
-// Apply the middleware
+// 2. Setup Toolkit Middleware
+// This single call now handles: caching, compression, logging, and the dashboard!
 app.use(toolkit.middleware);
-
-// Mount the dashboard
-app.use("/ept", toolkit.dashboardRouter);
 
 // ── Sample API Routes ───────────────────────────────────────
 

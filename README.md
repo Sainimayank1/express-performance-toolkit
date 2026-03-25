@@ -77,12 +77,13 @@ const toolkit = performanceToolkit({
   },
   dashboard: {
     enabled: true,
-    auth: { username: "admin", password: "password" },
+    path: "/ept", // Dashboard automatically mounted here
+    auth: { username: "admin", password: "ept-toolkit" }, // Default credentials
   },
 });
 
+// This single line handles both performance logic AND the dashboard!
 app.use(toolkit.middleware);
-app.use("/ept", toolkit.dashboardRouter);
 ```
 
 View the dashboard at: `http://localhost:3000/ept`
