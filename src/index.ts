@@ -19,6 +19,112 @@ import {
 } from "./types";
 import { DEFAULT_DASHBOARD_PATH } from "./constants";
 
+/** Middleware Setup Helpers */
+
+function setupRateLimiter(
+  option: boolean | RateLimitOptions | undefined,
+  store: MetricsStore,
+  middlewares: any[],
+  dashboardPath: string,
+): void {
+  const config = normalizeOption<RateLimitOptions>(option, { enabled: false });
+  if (config.enabled !== false) {
+    config.exclude = [dashboardPath, ...(config.exclude || [])];
+    middlewares.push(createRateLimiter(store, config));
+  }
+}
+
+function setupLogger(
+  option: boolean | LoggerOptions | undefined,
+  store: MetricsStore,
+  middlewares: any[],
+  dashboardPath: string,
+): void {
+  const config = normalizeOption<LoggerOptions>(option, { enabled: true });
+  if (config.enabled !== false) {
+    config.exclude = [dashboardPath, ...(config.exclude || [])];
+    middlewares.push(createLoggerMiddleware(config, store));
+  }
+}
+
+function setupCache(
+  option: boolean | CacheOptions | undefined,
+  store: MetricsStore,
+  middlewares: any[],
+  dashboardPath: string,
+): CacheMiddleware | null {
+  const config = normalizeOption<CacheOptions>(option, { enabled: false });
+  if (config.enabled !== false) {
+    config.exclude = [dashboardPath, ...(config.exclude || [])];
+    const instance = createCacheMiddleware(config, store);
+    middlewares.push(instance);
+    return instance;
+  }
+  return null;
+}
+
+function setupCompression(
+  option: boolean | CompressionOptions | undefined,
+  middlewares: any[],
+): void {
+  const config = normalizeOption<CompressionOptions>(option, { enabled: true });
+  if (config.enabled !== false) {
+    middlewares.push(createCompressionMiddleware(config));
+  }
+}
+
+function setupQueryHelper(
+  option: boolean | QueryHelperOptions | undefined,
+  middlewares: any[],
+): void {
+  const config = normalizeOption<QueryHelperOptions>(option, {
+    enabled: false,
+  });
+  if (config.enabled !== false) {
+    middlewares.push(createQueryHelperMiddleware(config));
+  }
+}
+
+/** Composition Helpers */
+function createComposedMiddleware(middlewares: any[]) {
+  return function composedMiddleware(
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ): void {
+    let index = 0;
+
+    function runNext(err?: unknown): void {
+      if (err) return next(err);
+      if (index >= middlewares.length) return next();
+
+      const current = middlewares[index++];
+      try {
+        current(req, res, runNext);
+      } catch (e) {
+        next(e);
+      }
+    }
+
+    runNext();
+  };
+}
+
+/**
+ * Normalize a boolean | object option into a config object.
+ */
+function normalizeOption<T extends { enabled?: boolean }>(
+  value: boolean | T | undefined,
+  defaults: T,
+): T {
+  if (value === true) return { ...defaults, enabled: true };
+  if (value === false) return { ...defaults, enabled: false };
+  if (value && typeof value === "object") {
+    return { ...defaults, ...value };
+  }
+  return defaults;
+}
+
 /**
  * ⚡ Express Performance Toolkit
  *
@@ -46,133 +152,42 @@ export function performanceToolkit(
     res: Response,
     next: NextFunction,
   ) => void)[] = [];
-  let cacheMiddlewareInstance: CacheMiddleware | null = null;
-
   const store = new MetricsStore({ maxLogs: options.maxLogs || 1000 });
 
-  // ── Dashboard Config ─────────────────────────────────────
+  // 1. Dashboard Config
   const dashboardConfig = normalizeOption<DashboardOptions>(options.dashboard, {
     enabled: true,
   });
-  const dashboardExcludePath = dashboardConfig.path || DEFAULT_DASHBOARD_PATH;
+  const dashboardPath = dashboardConfig.path || DEFAULT_DASHBOARD_PATH;
 
-  // ── Rate Limiter ─────────────────────────────────────────
-  const rateLimitConfig = normalizeOption<RateLimitOptions>(options.rateLimit, {
-    enabled: false,
-  });
-  if (rateLimitConfig.enabled !== false) {
-    // Automatically exclude dashboard from rate limiting to prevent UI lockouts
-    rateLimitConfig.exclude = [
-      dashboardExcludePath,
-      ...(rateLimitConfig.exclude || []),
-    ];
-    middlewares.push(createRateLimiter(store, rateLimitConfig));
-  }
-
-  // ── Logger ──────────────────────
-  const loggerConfig = normalizeOption<LoggerOptions>(options.logging, {
-    enabled: true,
-  });
-  if (loggerConfig.enabled !== false) {
-    loggerConfig.exclude = [
-      dashboardExcludePath,
-      ...(loggerConfig.exclude || []),
-    ];
-    middlewares.push(createLoggerMiddleware(loggerConfig, store));
-  }
-
-  // ── Cache ────────────────────────────────────────────────
-  const cacheConfig = normalizeOption<CacheOptions>(options.cache, {
-    enabled: false,
-  });
-  if (cacheConfig.enabled !== false) {
-    // Automatically exclude dashboard from caching to prevent metrics lag
-    cacheConfig.exclude = [
-      dashboardExcludePath,
-      ...(cacheConfig.exclude || []),
-    ];
-    cacheMiddlewareInstance = createCacheMiddleware(cacheConfig, store);
-    middlewares.push(cacheMiddlewareInstance);
-  }
-
-  // ── Compression ──────────────────────────────────────────
-  const compressionConfig = normalizeOption<CompressionOptions>(
-    options.compression,
-    { enabled: true },
-  );
-  if (compressionConfig.enabled !== false) {
-    middlewares.push(createCompressionMiddleware(compressionConfig));
-  }
-
-  // ── Query Helper ─────────────────────────────────────────
-  const queryConfig = normalizeOption<QueryHelperOptions>(options.queryHelper, {
-    enabled: false,
-  });
-  if (queryConfig.enabled !== false) {
-    middlewares.push(createQueryHelperMiddleware(queryConfig));
-  }
+  // 2. Setup Middlewares (Order is critical for performance/security)
+  setupRateLimiter(options.rateLimit, store, middlewares, dashboardPath);
+  setupLogger(options.logging, store, middlewares, dashboardPath);
+  const cache = setupCache(options.cache, store, middlewares, dashboardPath);
+  setupCompression(options.compression, middlewares);
+  setupQueryHelper(options.queryHelper, middlewares);
 
   if (dashboardConfig.enabled !== false) {
     console.info(
-      `[Express Performance Toolkit] Dashboard available at: ${dashboardExcludePath}`,
+      `[Express Performance Toolkit] Dashboard available at: ${dashboardPath}`,
     );
   }
 
-  // ── Dashboard Router ─────────────────────────────────────
   const dashboardRouter = createDashboardRouter(store, {
     ...dashboardConfig,
     path: DEFAULT_DASHBOARD_PATH,
   });
 
-  // ── Composed Middleware ──────────────────────────────────
-  function composedMiddleware(
-    req: Request,
-    res: Response,
-    next: NextFunction,
-  ): void {
-    let index = 0;
-
-    function runNext(err?: unknown): void {
-      if (err) return next(err);
-      if (index >= middlewares.length) return next();
-
-      const current = middlewares[index++];
-      try {
-        current(req, res, runNext);
-      } catch (e) {
-        next(e);
-      }
-    }
-
-    runNext();
-  }
-
   return {
-    middleware: composedMiddleware,
+    middleware: createComposedMiddleware(middlewares),
     dashboardRouter,
     getMetrics: () => store.getMetrics(),
     resetMetrics: () => store.reset(),
-    cache: cacheMiddlewareInstance,
+    cache,
     store,
   };
 }
 
-/**
- * Normalize a boolean | object option into a config object.
- */
-function normalizeOption<T extends { enabled?: boolean }>(
-  value: boolean | T | undefined,
-  defaults: T,
-): T {
-  if (value === true) return { ...defaults, enabled: true };
-  if (value === false) return { ...defaults, enabled: false };
-  if (value && typeof value === "object") {
-    return { ...defaults, ...value };
-  }
-  return defaults;
-}
-
-// ── Re-exports ─────────────────────────────────────────────
 export { MetricsStore } from "./store";
 export { LRUCache, createCacheMiddleware } from "./tools/cache";
 export { createCompressionMiddleware } from "./tools/compression";
