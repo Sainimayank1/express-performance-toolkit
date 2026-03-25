@@ -1,18 +1,18 @@
-import { defineConfig } from 'vite';
-import preact from '@preact/preset-vite';
+import { defineConfig } from "vite";
+import preact from "@preact/preset-vite";
 
 export default defineConfig({
   plugins: [preact()],
-  base: './',
+  base: "./",
   build: {
-    outDir: 'dist',
+    outDir: "dist",
     emptyOutDir: true,
     sourcemap: false,
-    minify: 'esbuild',
+    minify: "esbuild",
   },
   server: {
     proxy: {
-      '/api': 'http://localhost:3000/__perf/api',
+      "/api": "http://localhost:3000/ept/api",
     },
   },
 });

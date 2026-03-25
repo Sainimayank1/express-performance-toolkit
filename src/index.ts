@@ -35,7 +35,7 @@ import { DEFAULT_DASHBOARD_PATH } from "./constants";
  * });
  *
  * app.use(toolkit.middleware);
- * app.use('/__perf', toolkit.dashboardRouter);
+ * app.use('/ept', toolkit.dashboardRouter);
  * ```
  */
 export function performanceToolkit(
@@ -121,7 +121,7 @@ export function performanceToolkit(
   // ── Dashboard Router ─────────────────────────────────────
   const dashboardRouter = createDashboardRouter(store, {
     ...dashboardConfig,
-    path: "/", // Always serve at the root of the provided router
+    path: DEFAULT_DASHBOARD_PATH,
   });
 
   // ── Composed Middleware ──────────────────────────────────

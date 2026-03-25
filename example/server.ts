@@ -10,7 +10,7 @@ const toolkit = performanceToolkit({
     enabled: true,
     ttl: 30000, // 30s cache TTL
     maxSize: 50,
-    exclude: ["/api/random", "/api/large", "/__perf"],
+    exclude: ["/api/random", "/api/large", "/ept"],
     // Optional Redis configuration for testing
     redis: process.env.REDIS_URL
       ? { host: process.env.REDIS_URL } // e.g., '127.0.0.1'
@@ -42,7 +42,7 @@ const toolkit = performanceToolkit({
   },
   dashboard: {
     enabled: true,
-    path: "/__perf",
+    path: "/ept",
     auth: {
       username: "admin",
       password: "admin",
@@ -54,7 +54,7 @@ const toolkit = performanceToolkit({
 app.use(toolkit.middleware);
 
 // Mount the dashboard
-app.use("/__perf", toolkit.dashboardRouter);
+app.use("/ept", toolkit.dashboardRouter);
 
 // ── Sample API Routes ───────────────────────────────────────
 
@@ -171,7 +171,7 @@ app.listen(PORT, () => {
   console.log("  ⚡ Express Performance Toolkit — Example Server");
   console.log("  ────────────────────────────────────────────────");
   console.log(`  🚀 Server:    http://localhost:${PORT}`);
-  console.log(`  📊 Dashboard: http://localhost:${PORT}/__perf`);
+  console.log(`  📊 Dashboard: http://localhost:${PORT}/ept`);
   console.log("");
   console.log("  Try these endpoints:");
   console.log(

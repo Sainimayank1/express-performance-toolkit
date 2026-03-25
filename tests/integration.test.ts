@@ -27,7 +27,7 @@ describe("Integration Tests", () => {
     });
 
     app.use(toolkit.middleware);
-    app.use("/__perf", toolkit.dashboardRouter);
+    app.use("/ept", toolkit.dashboardRouter);
 
     app.get("/api/test", (_req, res) => {
       res.json({ message: "hello" });
@@ -80,7 +80,7 @@ describe("Integration Tests", () => {
   describe("Dashboard", () => {
     it("should redirect or serve dashboard HTML", async () => {
       // express.static without trailing slash redirects (301) to add the trailing slash
-      const res = await request(app).get("/__perf");
+      const res = await request(app).get("/ept");
       expect([200, 301]).toContain(res.status);
     });
 
@@ -89,7 +89,7 @@ describe("Integration Tests", () => {
       await request(app).get("/api/test");
       await request(app).get("/api/test");
 
-      const res = await request(app).get("/__perf/api/metrics");
+      const res = await request(app).get("/ept/api/metrics");
       expect(res.status).toBe(200);
       expect(res.body).toHaveProperty("totalRequests");
       expect(res.body).toHaveProperty("avgResponseTime");
@@ -102,11 +102,11 @@ describe("Integration Tests", () => {
     it("should reset metrics via POST", async () => {
       await request(app).get("/api/test");
 
-      const resetRes = await request(app).post("/__perf/api/reset");
+      const resetRes = await request(app).post("/ept/api/reset");
       expect(resetRes.status).toBe(200);
       expect(resetRes.body.success).toBe(true);
 
-      const metricsRes = await request(app).get("/__perf/api/metrics");
+      const metricsRes = await request(app).get("/ept/api/metrics");
 
       // Dashboard requests are now excluded from logging to prevent lags
       // So fetching metrics should not increment the request count
@@ -121,7 +121,7 @@ describe("Integration Tests", () => {
       // Give on-finished time to fire
       await new Promise((r) => setTimeout(r, 50));
 
-      const metricsRes = await request(app).get("/__perf/api/metrics");
+      const metricsRes = await request(app).get("/ept/api/metrics");
       expect(metricsRes.body.slowRequests).toBeGreaterThanOrEqual(1);
     });
   });

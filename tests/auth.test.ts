@@ -16,15 +16,15 @@ describe("Dashboard Authentication", () => {
     });
 
     app.use(toolkit.middleware);
-    app.use('/__perf', toolkit.dashboardRouter);
+    app.use("/ept", toolkit.dashboardRouter);
 
     // Should return 401 for protected data
-    const resp = await request(app).get("/__perf/api/metrics");
+    const resp = await request(app).get("/ept/api/metrics");
     expect(resp.status).toBe(401);
 
     // Try login
     const loginResp = await request(app)
-      .post("/__perf/api/login")
+      .post("/ept/api/login")
       .send({ username: "testuser", password: "testpassword" });
 
     expect(loginResp.status).toBe(200);
@@ -33,7 +33,7 @@ describe("Dashboard Authentication", () => {
     // With cookie, should work
     const cookie = loginResp.headers["set-cookie"];
     const metricsResp = await request(app)
-      .get("/__perf/api/metrics")
+      .get("/ept/api/metrics")
       .set("Cookie", cookie);
 
     expect(metricsResp.status).toBe(200);
@@ -52,10 +52,10 @@ describe("Dashboard Authentication", () => {
     });
 
     app.use(toolkit.middleware);
-    app.use('/__perf', toolkit.dashboardRouter);
+    app.use("/ept", toolkit.dashboardRouter);
 
     const loginResp = await request(app)
-      .post("/__perf/api/login")
+      .post("/ept/api/login")
       .send({ username: "admin", password: "wrong" });
 
     expect(loginResp.status).toBe(401);
@@ -71,9 +71,9 @@ describe("Dashboard Authentication", () => {
     });
 
     app.use(toolkit.middleware);
-    app.use("/__perf", toolkit.dashboardRouter);
+    app.use("/ept", toolkit.dashboardRouter);
 
-    const resp = await request(app).get("/__perf/api/metrics");
+    const resp = await request(app).get("/ept/api/metrics");
     expect(resp.status).toBe(200);
   });
 });

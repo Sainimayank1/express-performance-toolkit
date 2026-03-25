@@ -88,7 +88,7 @@ export interface DashboardAuthOptions {
 export interface DashboardOptions {
   /** Enable dashboard (default: true) */
   enabled?: boolean;
-  /** Dashboard mount path (default: '/__perf') */
+  /** Dashboard mount path (default: '/ept') */
   path?: string;
   /** Authentication settings. If provided, user must login to see dashboard. */
   auth?: DashboardAuthOptions;
@@ -105,7 +105,7 @@ export interface RateLimitOptions {
   statusCode?: number;
   /** Response message string or object */
   message?: string | object;
-  /** URL patterns to exclude from rate limiting (e.g. ['/__perf*']) */
+  /** URL patterns to exclude from rate limiting (e.g. ['/ept*']) */
   exclude?: (string | RegExp)[];
   /** HTTP methods to rate limit (e.g. ['GET', 'POST']). If not provided, all methods except OPTIONS are limited. */
   methods?: string[];

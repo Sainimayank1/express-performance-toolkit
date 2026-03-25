@@ -7,7 +7,7 @@ export const DEFAULT_AUTH_OPTIONS = {
 };
 
 // Dashboard
-export const DEFAULT_DASHBOARD_PATH = "/__perf";
+export const DEFAULT_DASHBOARD_PATH = "/ept";
 export const API_METRICS_PATH = "/api/metrics";
 export const API_RESET_PATH = "/api/reset";
 

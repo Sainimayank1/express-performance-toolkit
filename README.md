@@ -13,7 +13,7 @@ const app = express();
 const toolkit = performanceToolkit();
 
 app.use(toolkit.middleware);
-app.use("/__perf", toolkit.dashboardRouter);
+app.use("/ept", toolkit.dashboardRouter);
 
 app.listen(3000);
 ```
@@ -56,10 +56,10 @@ const toolkit = performanceToolkit({
 });
 
 app.use(toolkit.middleware);
-app.use("/__perf", toolkit.dashboardRouter);
+app.use("/ept", toolkit.dashboardRouter);
 ```
 
-View the dashboard at `http://localhost:3000/__perf`.
+View the dashboard at `http://localhost:3000/ept`.
 
 ## Configuration
 
@@ -106,7 +106,7 @@ npm install
 npm run example
 ```
 
-Then open `http://localhost:3000/__perf` to see the dashboard.
+Then open `http://localhost:3000/ept` to see the dashboard.
 
 ## Contributing
 
