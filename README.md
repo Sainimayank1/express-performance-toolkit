@@ -60,6 +60,7 @@ npm install express-performance-toolkit
 
 - [GitHub Repository](https://github.com/Sainimayank1/express-performance-toolkit)
 - [NPM Package](https://www.npmjs.com/package/express-performance-toolkit)
+- [Medium Article](https://medium.com/@mayanksaini4455/one-middleware-that-adds-caching-compression-monitoring-to-express-instantly-213b3786b258)
 
 ## Quick Start
 
@@ -130,7 +131,7 @@ npm test
 
 ## License
 
-[MIT](LICENSE)
+[GNU](LICENSE)
 
 [github-actions-ci-image]: https://img.shields.io/github/actions/workflow/status/Sainimayank1/express-performance-toolkit/ci.yml?branch=main&label=ci
 [github-actions-ci-url]: https://github.com/Sainimayank1/express-performance-toolkit/actions/workflows/ci.yml
