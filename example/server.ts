@@ -9,9 +9,13 @@ const toolkit = performanceToolkit({
   cache: {
     ttl: 30000, // 30s cache TTL
     maxSize: 50,
-    exclude: ["/api/random", "/__perf"],
+    exclude: ["/api/random", "/api/large", "/__perf"],
   },
-  compression: true,
+  compression: {
+    enabled: true,
+    threshold: 1024, // 1KB,
+    level: 6,
+  },
   logSlowRequests: {
     slowThreshold: 500, // Flag requests > 500ms as slow
     console: true,
@@ -128,6 +132,17 @@ app.post("/api/users", express.json(), (req: Request, res: Response) => {
   });
 });
 
+// Large response — triggers compression (>1KB)
+app.get("/api/large", (_req: Request, res: Response) => {
+  const largeData = Array.from({ length: 30000 }, (_, i) => ({
+    id: i,
+    message: "This is a large data point to test compression functionality.",
+    timestamp: Date.now(),
+    tags: ["test", "compression", "performance", "toolkit"],
+  }));
+  res.json(largeData);
+});
+
 // Error route
 app.get("/api/error", (_req: Request, _res: Response) => {
   throw new Error("Something went wrong!");
@@ -150,15 +165,22 @@ app.listen(PORT, () => {
   console.log(`  📊 Dashboard: http://localhost:${PORT}/__perf`);
   console.log("");
   console.log("  Try these endpoints:");
-  console.log(`    GET  http://localhost:${PORT}/api/users     (fast, cached)`);
   console.log(
-    `    GET  http://localhost:${PORT}/api/slow      (slow, triggers alert)`,
+    `    GET  http://localhost:${PORT}/api/users      (fast, cached)`,
   );
-  console.log(`    GET  http://localhost:${PORT}/api/products  (medium speed)`);
-  console.log(`    GET  http://localhost:${PORT}/api/random    (not cached)`);
   console.log(
-    `    GET  http://localhost:${PORT}/api/posts     (N+1 query warning)`,
+    `    GET  http://localhost:${PORT}/api/slow       (slow, triggers alert)`,
   );
-  console.log(`    POST http://localhost:${PORT}/api/users     (not cached)`);
+  console.log(
+    `    GET  http://localhost:${PORT}/api/products   (medium speed)`,
+  );
+  console.log(`    GET  http://localhost:${PORT}/api/random     (not cached)`);
+  console.log(
+    `    GET  http://localhost:${PORT}/api/posts      (N+1 query warning)`,
+  );
+  console.log(
+    `    GET  http://localhost:${PORT}/api/large      (large, compressed)`,
+  );
+  console.log(`    POST http://localhost:${PORT}/api/users      (not cached)`);
   console.log("");
 });

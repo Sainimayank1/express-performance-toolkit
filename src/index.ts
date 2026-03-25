@@ -167,7 +167,7 @@ function normalizeOption<T extends { enabled?: boolean }>(
   if (value === true) return { ...defaults, enabled: true };
   if (value === false) return { ...defaults, enabled: false };
   if (typeof value === "object")
-    return { ...defaults, ...value, enabled: true };
+    return { ...defaults, enabled: true, ...value };
   return defaults;
 }
 

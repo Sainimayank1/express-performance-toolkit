@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { MetricsStore } from "../store";
 import { RateLimitOptions } from "../types";
+import { DEFAULT_RATE_LIMIT_OPTIONS } from "../constants";
 
 interface RateLimitTracker {
   count: number;
@@ -18,10 +19,10 @@ export function createRateLimiter(
   }
 
   const opts = typeof options === "object" ? options : {};
-  const windowMs = opts.windowMs || 60000;
-  const max = opts.max || 100;
-  const statusCode = opts.statusCode || 429;
-  const message = opts.message || "Too many requests, please try again later.";
+  const windowMs = opts.windowMs || DEFAULT_RATE_LIMIT_OPTIONS.windowMs;
+  const max = opts.max || DEFAULT_RATE_LIMIT_OPTIONS.max;
+  const statusCode = opts.statusCode || DEFAULT_RATE_LIMIT_OPTIONS.statusCode;
+  const message = opts.message || DEFAULT_RATE_LIMIT_OPTIONS.message;
 
   // In-memory store mapping IP addresses to tracking objects
   const hits = new Map<string, RateLimitTracker>();

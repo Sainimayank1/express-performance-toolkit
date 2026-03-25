@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import compressionMiddleware from "compression";
 import { CompressionOptions } from "../types";
+import { NO_COMPRESSION_HEADER } from "../constants";
 
 /**
  * Create compression middleware with sensible defaults.
@@ -15,7 +16,7 @@ export function createCompressionMiddleware(
     level,
     filter: (req: Request, res: Response): boolean => {
       // Don't compress if the client didn't request it
-      if (req.headers["x-no-compression"]) {
+      if (req.headers[NO_COMPRESSION_HEADER]) {
         return false;
       }
       // Use compression's default filter
