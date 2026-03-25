@@ -1,11 +1,26 @@
-# ⚡ Express Performance Toolkit
+[![EPT Logo](assets/ept.png)](https://github.com/Sainimayank1/express-performance-toolkit)
 
 **Fast, composable performance middleware for [Express](https://expressjs.com).**
 
-[![NPM Version](https://img.shields.io/npm/v/express-performance-toolkit.svg)](https://www.npmjs.com/package/express-performance-toolkit)
-[![License: GNU](https://img.shields.io/badge/License-GNU-green.svg)](https://github.com/Sainimayank1/express-performance-toolkit/blob/main/LICENSE)
+## Table of contents
 
-```ts
+- [Table of contents](#table-of-contents)
+- [Installation](#installation)
+- [Features](#features)
+- [Docs \& Community](#docs--community)
+- [Quick Start](#quick-start)
+- [Philosophy](#philosophy)
+- [Examples](#examples)
+- [Contributing](#contributing)
+  - [Security Issues](#security-issues)
+  - [Running Tests](#running-tests)
+- [License](#license)
+
+[![NPM Version][npm-version-image]][npm-url]
+[![NPM Downloads][npm-downloads-image]][npm-downloads-url]
+[![Linux Build][github-actions-ci-image]][github-actions-ci-url]
+
+```js
 import express from "express";
 import { performanceToolkit } from "express-performance-toolkit";
 
@@ -15,10 +30,18 @@ const toolkit = performanceToolkit();
 app.use(toolkit.middleware);
 app.use("/ept", toolkit.dashboardRouter);
 
-app.listen(3000);
+app.listen(3000, () => {
+  console.log("Server is running on http://localhost:3000");
+});
 ```
 
 ## Installation
+
+Before installing, [download and install Node.js](https://nodejs.org/en/download/).
+Node.js 20 or higher is required.
+
+Installation is done using the
+[`npm install` command](https://docs.npmjs.com/getting-started/installing-npm-packages-locally):
 
 ```bash
 npm install express-performance-toolkit
@@ -26,17 +49,21 @@ npm install express-performance-toolkit
 
 ## Features
 
-- Request caching with in-memory LRU (+ optional Redis)
-- Response compression with configurable thresholds
-- IP-based rate limiting with blocked traffic tracking
-- Slow API detection and structured logging
-- N+1 query detection via `req.perfToolkit.trackQuery()`
-- Real-time bandwidth and payload size monitoring
-- Multi-page performance dashboard with auth
-- Smart insights engine with actionable recommendations
-- Full TypeScript support
+- **Request Caching:** High-performance in-memory LRU cache with optional Redis backend for persistent scaling.
+- **Response Compression:** Automatic Gzip/Deflate/Brotli compression to minimize bandwidth usage.
+- **Smart Rate Limiting:** IP-based protection with real-time tracking of blocked traffic.
+- **Slow Request Detection:** Built-in observability with structured logging and performance alerts.
+- **N+1 Query Tracking:** Effortlessly detect inefficient database patterns with simple instrumentation.
+- **Performance Dashboard:** A sleek, real-time UI to monitor your server's health, throughput, and anomalies.
+
+## Docs & Community
+
+- [GitHub Repository](https://github.com/Sainimayank1/express-performance-toolkit)
+- [NPM Package](https://www.npmjs.com/package/express-performance-toolkit)
 
 ## Quick Start
+
+The quickest way to get started is to wrap your application with the toolkit:
 
 ```ts
 const toolkit = performanceToolkit({
@@ -47,11 +74,9 @@ const toolkit = performanceToolkit({
     file: "logs/ept.log",
     rotation: true,
   },
-  rateLimit: { enabled: true, windowMs: 60000, max: 100 },
-  queryHelper: { threshold: 10 },
   dashboard: {
     enabled: true,
-    auth: { username: "admin", password: "changeme" },
+    auth: { username: "admin", password: "password" },
   },
 });
 
@@ -59,66 +84,45 @@ app.use(toolkit.middleware);
 app.use("/ept", toolkit.dashboardRouter);
 ```
 
-View the dashboard at `http://localhost:3000/ept`.
+View the dashboard at: `http://localhost:3000/ept`
 
-## Configuration
+## Philosophy
 
-| Option        | Type                | Default | Description                                     |
-| ------------- | ------------------- | ------- | ----------------------------------------------- |
-| `cache`       | `boolean \| object` | `true`  | LRU caching with TTL, maxSize, exclude patterns |
-| `compression` | `boolean \| object` | `true`  | Gzip/deflate compression                        |
-| `logging`     | `boolean \| object` | `true`  | Slow request detection, file logging, rotation  |
-| `rateLimit`   | `boolean \| object` | `false` | IP-based rate limiting                          |
-| `queryHelper` | `boolean \| object` | `true`  | N+1 query detection                             |
-| `dashboard`   | `boolean \| object` | `true`  | Real-time dashboard with auth                   |
-| `maxLogs`     | `number`            | `1000`  | Max log entries in memory                       |
+The Express Performance Toolkit (EPT) philosophy is to provide robust, zero-config performance optimizations and observation tools that "just work". It's designed to be lightweight, resilient (graceful fallbacks), and highly actionable for developers building modern Express APIs.
 
-## API
+## Examples
 
-```ts
-// Access metrics
-const metrics = toolkit.getMetrics();
-
-// Manual cache control
-toolkit.cache?.clear();
-toolkit.cache?.delete("GET /api/users");
-
-// Reset all metrics
-toolkit.resetMetrics();
-```
-
-## Redis Testing
-
-You can easily test Redis caching in the example server by setting the `USE_REDIS` environment variable:
+To view the examples, clone the repository:
 
 ```bash
-USE_REDIS=true npm run example
-```
-
-This will attempt to connect to a Redis server at `127.0.0.1:6379`. If Redis is not available, the toolkit will automatically fall back to the in-memory LRU cache.
-
-Clone the repo and run the example server:
-
-```bash
-git clone https://github.com/Sainimayank1/express-performance-toolkit.git
+git clone https://github.com/Sainimayank1/express-performance-toolkit.git --depth 1
 cd express-performance-toolkit
+```
+
+Then install dependencies and run the example server:
+
+```bash
 npm install
 npm run example
 ```
 
-Then open `http://localhost:3000/ept` to see the dashboard.
-
 ## Contributing
 
-Pull requests are welcome. For changes, please open an issue first.
+The project welcomes all constructive contributions!
 
-1. Fork the repo
-2. Create your branch (`git checkout -b feature/thing`)
-3. Commit your changes (`git commit -m 'Add thing'`)
-4. Push to the branch (`git push origin feature/thing`)
-5. Open a Pull Request
+### Security Issues
 
-## Tests
+If you discover a security vulnerability, please open an issue in the GitHub repository.
+
+### Running Tests
+
+To run the test suite, first install the dependencies:
+
+```bash
+npm install
+```
+
+Then run `npm test`:
 
 ```bash
 npm test
@@ -126,4 +130,11 @@ npm test
 
 ## License
 
-[GNU](https://github.com/Sainimayank1/express-performance-toolkit/blob/main/LICENSE)
+[MIT](LICENSE)
+
+[github-actions-ci-image]: https://img.shields.io/github/actions/workflow/status/Sainimayank1/express-performance-toolkit/ci.yml?branch=main&label=ci
+[github-actions-ci-url]: https://github.com/Sainimayank1/express-performance-toolkit/actions/workflows/ci.yml
+[npm-downloads-image]: https://img.shields.io/npm/dm/express-performance-toolkit
+[npm-downloads-url]: https://npmcharts.com/compare/express-performance-toolkit?minimal=true
+[npm-url]: https://npmjs.org/package/express-performance-toolkit
+[npm-version-image]: https://img.shields.io/npm/v/express-performance-toolkit
