@@ -14,10 +14,11 @@ import {
   QueryHelperOptions,
   RateLimitOptions,
   DashboardOptions,
+  TracingOptions,
   CacheMiddleware,
   ToolkitInstance,
 } from "./types";
-import { DEFAULT_DASHBOARD_PATH } from "./constants";
+import { DEFAULT_DASHBOARD_PATH, DEFAULT_TRACING_OPTIONS } from "./constants";
 
 /** Middleware Setup Helpers */
 
@@ -83,6 +84,34 @@ function setupQueryHelper(
   });
   if (config.enabled !== false) {
     middlewares.push(createQueryHelperMiddleware(config));
+  }
+}
+
+function setupTracing(
+  option: boolean | TracingOptions | undefined,
+  middlewares: ((req: Request, res: Response, next: NextFunction) => void)[],
+): void {
+  const config = normalizeOption<TracingOptions>(
+    option,
+    DEFAULT_TRACING_OPTIONS,
+  );
+  if (config.enabled !== false) {
+    const headerName = config.headerName || DEFAULT_TRACING_OPTIONS.headerName;
+    middlewares.push((req: Request, res: Response, next: NextFunction) => {
+      // 1. Extract or Generate ID
+      const requestId =
+        (req.headers[headerName] as string) ||
+        `req_${Math.random().toString(36).substring(2, 15)}`;
+
+      // 2. Attach to context
+      if (!req.ept) (req as any).ept = {};
+      (req as any).ept.requestId = requestId;
+
+      // 3. Set response header
+      res.setHeader(headerName, requestId);
+
+      next();
+    });
   }
 }
 
@@ -161,6 +190,7 @@ export function performanceToolkit(
   const dashboardPath = dashboardConfig.path || DEFAULT_DASHBOARD_PATH;
 
   // 2. Setup Middlewares (Order is critical for performance/security)
+  setupTracing(options.tracing, middlewares);
   setupRateLimiter(options.rateLimit, store, middlewares, dashboardPath);
   setupLogger(options.logging, store, middlewares, dashboardPath);
   const cache = setupCache(options.cache, store, middlewares, dashboardPath);

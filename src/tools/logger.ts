@@ -199,14 +199,17 @@ export function createLoggerMiddleware(
       return originalEnd.apply(res, args as any);
     };
 
-    // Attach ept data to request
+    // Attach ept data to request safely
     if (!req.ept) {
-      req.ept = {
-        startTime,
-        queryCount: 0,
-        trackQuery: () => {
-          req.ept!.queryCount++;
-        },
+      (req as any).ept = {};
+    }
+
+    const ept = req.ept!;
+    if (!ept.startTime) ept.startTime = startTime;
+    if (ept.queryCount === undefined) ept.queryCount = 0;
+    if (!ept.trackQuery) {
+      ept.trackQuery = () => {
+        ept.queryCount = (ept.queryCount || 0) + 1;
       };
     }
 
@@ -240,6 +243,7 @@ export function createLoggerMiddleware(
           req.ip === "::1" || req.ip === "::ffff:127.0.0.1"
             ? "127.0.0.1"
             : req.ip,
+        requestId: req.ept?.requestId,
       };
 
       // Record in store

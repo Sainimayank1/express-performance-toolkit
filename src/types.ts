@@ -102,6 +102,11 @@ export interface MetricsExporterOptions {
   requireAuth?: boolean;
 }
 
+export interface TracingOptions {
+  enabled?: boolean;
+  headerName?: string;
+}
+
 export interface RateLimitOptions {
   /** Enable rate limiting (default: false) */
   enabled?: boolean;
@@ -134,6 +139,8 @@ export interface ToolkitOptions {
   dashboard?: boolean | DashboardOptions;
   /** Rate limiting */
   rateLimit?: boolean | RateLimitOptions;
+  /** Tracing configuration */
+  tracing?: boolean | TracingOptions;
   /** Max log entries to keep in memory (default: 1000) */
   maxLogs?: number;
 }
@@ -155,12 +162,14 @@ export interface LogEntry {
   contentLength?: number;
   userAgent?: string;
   ip?: string;
+  requestId?: string;
 }
 
 export interface BlockedEvent {
   ip: string;
   path: string;
   timestamp: number;
+  requestId?: string;
   method: string;
 }
 
@@ -321,6 +330,7 @@ declare global {
         queryCount: number;
         highQueries?: boolean;
         trackQuery: (label?: string) => void;
+        requestId?: string;
       };
     }
   }

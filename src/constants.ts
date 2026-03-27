@@ -62,6 +62,12 @@ export const DEFAULT_CACHE_OPTIONS = {
   methods: ["GET"],
 };
 
+// Tracing
+export const DEFAULT_TRACING_OPTIONS = {
+  enabled: true,
+  headerName: "x-request-id",
+};
+
 // Store
 export const MAX_BLOCKED_EVENTS = 100;
 export const MAX_COMPRESSED_EVENTS = 100;

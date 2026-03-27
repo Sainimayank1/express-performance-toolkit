@@ -52,6 +52,7 @@ npm install express-performance-toolkit
 - **Response Compression:** Automatic Gzip/Deflate/Brotli compression to minimize bandwidth usage.
 - **Smart Rate Limiting:** IP-based protection with real-time tracking of blocked traffic.
 - **Slow Request Detection:** Built-in observability with structured logging and performance alerts.
+- **Request Tracing:** Automatic generation and propagation of `X-Request-Id` for distributed tracing.
 - **N+1 Query Tracking:** Effortlessly detect inefficient database patterns with simple instrumentation.
 - **Performance Dashboard:** A sleek, real-time UI to monitor your server's health, throughput, and anomalies.
 - **Metrics Export:** Expose application and system metrics in Prometheus format (default: `/ept/metrics`) for Grafana and OTEL compatibility.
@@ -90,6 +91,10 @@ const toolkit = performanceToolkit({
     path: "/ept", // Dashboard automatically mounted here
     auth: { username: "admin", password: "ept-toolkit" }, // Default credentials
     exporter: { enabled: true, path: "/metrics", requireAuth: false }, // Prometheus export
+  },
+  tracing: {
+    enabled: true, // default true
+    headerName: "x-request-id", // default x-request-id
   },
 });
 
