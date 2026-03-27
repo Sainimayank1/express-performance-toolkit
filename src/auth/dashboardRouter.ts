@@ -44,7 +44,7 @@ export function createDashboardRouter(
   };
 
   const healthConfig = {
-    enabled: options.health?.enabled || DEFAULT_HEALTH_CHECK_OPTIONS.enabled,
+    enabled: options.health?.enabled !== false,
     path: options.health?.path || DEFAULT_HEALTH_CHECK_OPTIONS.path,
   };
 
