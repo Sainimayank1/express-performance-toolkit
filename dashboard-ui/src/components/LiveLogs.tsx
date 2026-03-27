@@ -6,12 +6,22 @@ export function LiveLogs({ logs }: { logs: LogEntry[] }) {
   const [filter, setFilter] = useState<"all" | "slow" | "cached" | "errors">(
     "all",
   );
+  const [search, setSearch] = useState("");
 
   let filtered = logs;
   if (filter === "slow") filtered = logs.filter((l) => l.slow);
   else if (filter === "cached") filtered = logs.filter((l) => l.cached);
   else if (filter === "errors")
     filtered = logs.filter((l) => l.statusCode >= 400);
+
+  if (search) {
+    const s = search.toLowerCase();
+    filtered = filtered.filter(
+      (l) =>
+        l.requestId?.toLowerCase().includes(s) ||
+        l.path.toLowerCase().includes(s),
+    );
+  }
 
   return (
     <div className="panel animate-in delay-5">
@@ -43,6 +53,23 @@ export function LiveLogs({ logs }: { logs: LogEntry[] }) {
             Errors
           </button>
         </div>
+        <div className="search-box">
+          <input
+            type="text"
+            placeholder="Search by Request ID or Path..."
+            value={search}
+            onChange={(e) => setSearch((e.target as HTMLInputElement).value)}
+            style={{
+              padding: "4px 8px",
+              borderRadius: "4px",
+              border: "1px solid var(--border)",
+              background: "var(--bg-200)",
+              color: "var(--text-100)",
+              fontSize: "12px",
+              width: "200px",
+            }}
+          />
+        </div>
       </div>
       <div className="panel-body" style={{ padding: 0, maxHeight: "500px" }}>
         <div className="table-container">
@@ -51,7 +78,8 @@ export function LiveLogs({ logs }: { logs: LogEntry[] }) {
               <tr>
                 <th>Timestamp</th>
                 <th>Method</th>
-                <th style={{ width: "40%" }}>Path</th>
+                <th style={{ width: "30%" }}>Path</th>
+                <th>Request ID</th>
                 <th>Status</th>
                 <th>LATENCY</th>
                 <th>Cache</th>
@@ -106,6 +134,15 @@ export function LiveLogs({ logs }: { logs: LogEntry[] }) {
                           </span>
                         </td>
                         <td className="route-path">{log.path}</td>
+                        <td
+                          style={{
+                            fontFamily: "var(--font-mono)",
+                            fontSize: "11px",
+                            color: "var(--text-400)",
+                          }}
+                        >
+                          {log.requestId || "-"}
+                        </td>
                         <td
                           className={`status-code ${getStatusClass(log.statusCode)}`}
                           style={{ textAlign: "left" }}

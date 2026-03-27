@@ -44,7 +44,7 @@ const toolkit = performanceToolkit({
   dashboard: {
     enabled: true,
     path: "/ept",
-    auth: { username: "admin", password: "ept-toolkit" },
+    auth: { username: "admin", password: "admin" },
     exporter: {
       enabled: true,
       path: "/metrics",

@@ -16,6 +16,7 @@ export interface BlockedEvent {
   path: string;
   timestamp: number;
   method: string;
+  requestId?: string;
 }
 
 export interface CompressedEvent {
@@ -37,6 +38,7 @@ export interface LogEntry {
   cached: boolean;
   queryCount?: number;
   highQueries?: boolean;
+  requestId?: string;
 }
 
 export interface Insight {
