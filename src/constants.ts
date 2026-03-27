@@ -8,6 +8,7 @@ export const DEFAULT_AUTH_OPTIONS = {
 
 // Dashboard
 export const DEFAULT_DASHBOARD_PATH = "/ept";
+export const DEFAULT_METRICS_PATH = "/metrics";
 export const API_METRICS_PATH = "/api/metrics";
 export const API_RESET_PATH = "/api/reset";
 
@@ -17,6 +18,7 @@ export const DEFAULT_RATE_LIMIT_OPTIONS = {
   max: 100, // 100 requests per windowMs
   statusCode: 429,
   message: "Too many requests, please try again later.",
+  redis: null as null,
 };
 
 // Compression
@@ -59,3 +61,12 @@ export const DEFAULT_CACHE_OPTIONS = {
   redis: null,
   methods: ["GET"],
 };
+
+// Store
+export const MAX_BLOCKED_EVENTS = 100;
+export const MAX_COMPRESSED_EVENTS = 100;
+export const DEFAULT_MAX_LOGS = 1000;
+
+// Session Store
+export const DEFAULT_SESSION_TTL = 24 * 60 * 60 * 1000; // 24 hours
+export const DEFAULT_MAX_SESSIONS = 1000;

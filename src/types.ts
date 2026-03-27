@@ -86,6 +86,20 @@ export interface DashboardOptions {
   path?: string;
   /** Authentication settings. If provided, user must login to see dashboard. */
   auth?: DashboardAuthOptions | null;
+  /**
+   * Metrics export configuration (Prometheus / OTEL).
+   * If enabled, metrics will be exposed at `${path}${metricsPath}`.
+   */
+  exporter?: MetricsExporterOptions;
+}
+
+export interface MetricsExporterOptions {
+  /** Enable metrics export (default: true if dashboard is enabled) */
+  enabled?: boolean;
+  /** Path for metrics export relative to dashboard path (default: '/metrics') */
+  path?: string;
+  /** If true, the metrics endpoint will require authentication (default: false) */
+  requireAuth?: boolean;
 }
 
 export interface RateLimitOptions {
@@ -103,6 +117,8 @@ export interface RateLimitOptions {
   exclude?: (string | RegExp)[];
   /** HTTP methods to rate limit (e.g. ['GET', 'POST']). If not provided, all methods except OPTIONS are limited. */
   methods?: string[];
+  /** Optional Redis configuration for distributed rate limiting across cluster nodes */
+  redis?: RedisConfig | null;
 }
 
 export interface ToolkitOptions {

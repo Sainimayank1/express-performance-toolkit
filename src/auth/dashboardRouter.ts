@@ -5,19 +5,14 @@ import { MetricsStore } from "../store";
 import { DashboardOptions } from "../types";
 import {
   DEFAULT_AUTH_OPTIONS,
+  DEFAULT_SESSION_TTL,
+  DEFAULT_MAX_SESSIONS,
   API_METRICS_PATH,
   API_RESET_PATH,
+  DEFAULT_METRICS_PATH,
 } from "../constants";
 import { SessionStore } from "./session";
-
-/**
- * 🔐 Session-based authentication for the dashboard.
- * We use an in-memory session store with random session IDs.
- */
-const sessionStore = new SessionStore({
-  ttl: 24 * 60 * 60 * 1000, // 24 hours
-  maxSessions: 1000,
-});
+import { PrometheusExporter } from "../tools/exporter";
 
 /**
  * Create the dashboard Express router.
@@ -28,11 +23,24 @@ export function createDashboardRouter(
   options: DashboardOptions = {},
 ): Router {
   const router = Router();
+  const exporter = new PrometheusExporter();
+
+  // Each toolkit instance gets its own session store (no shared state)
+  const sessionStore = new SessionStore({
+    ttl: DEFAULT_SESSION_TTL,
+    maxSessions: DEFAULT_MAX_SESSIONS,
+  });
 
   // Default auth settings if none provided (Security by default)
   // To explicitly disable auth, pass auth: null or a falsy value in the config
   const auth =
     options.auth === null ? null : options.auth || DEFAULT_AUTH_OPTIONS;
+
+  const metricsExportConfig = {
+    enabled: options.exporter?.enabled || false,
+    path: options.exporter?.path || DEFAULT_METRICS_PATH,
+    requireAuth: options.exporter?.requireAuth || false,
+  };
 
   router.use(express.json());
 
@@ -116,6 +124,22 @@ export function createDashboardRouter(
   router.get(API_METRICS_PATH, requireAuth, (_req: Request, res: Response) => {
     res.json(store.getMetrics());
   });
+
+  // Prometheus metrics export endpoint
+  if (metricsExportConfig.enabled) {
+    const metricsHandler = (_req: Request, res: Response) => {
+      const metricsData = store.getMetrics();
+      const prometheusData = exporter.export(metricsData);
+      res.set("Content-Type", "text/plain; version=0.0.4");
+      res.send(prometheusData);
+    };
+
+    if (metricsExportConfig.requireAuth) {
+      router.get(metricsExportConfig.path, requireAuth, metricsHandler);
+    } else {
+      router.get(metricsExportConfig.path, metricsHandler);
+    }
+  }
 
   // Reset metrics endpoint (Protected)
   router.post(API_RESET_PATH, requireAuth, (_req: Request, res: Response) => {

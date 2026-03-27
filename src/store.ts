@@ -9,6 +9,11 @@ import { monitorEventLoopDelay } from "perf_hooks";
 import { analyzeMetrics } from "./tools/analyzer";
 import * as v8 from "v8";
 import * as os from "os";
+import {
+  DEFAULT_MAX_LOGS,
+  MAX_BLOCKED_EVENTS,
+  MAX_COMPRESSED_EVENTS,
+} from "./constants";
 
 /**
  * In-memory metrics store — shared state between all middleware components.
@@ -17,9 +22,22 @@ import * as os from "os";
 export class MetricsStore {
   private maxLogs: number;
   private maxRoutes: number = 200; // Cap unique routes to prevent memory leaks
-  private logs: LogEntry[];
-  private blockedEvents: BlockedEvent[] = [];
-  private compressedEvents: CompressedEvent[] = [];
+
+  // O(1) circular buffer for request logs
+  private logs: (LogEntry | null)[];
+  private logHead: number = 0;
+  private logCount: number = 0;
+
+  // O(1) circular buffer for blocked events
+  private blockedEvents: (BlockedEvent | null)[];
+  private blockedHead: number = 0;
+  private blockedCount: number = 0;
+
+  // O(1) circular buffer for compressed events
+  private compressedEvents: (CompressedEvent | null)[];
+  private compressedHead: number = 0;
+  private compressedCount: number = 0;
+
   private histogram: ReturnType<typeof monitorEventLoopDelay>;
   private lastCpuUsage: { idle: number; total: number } | null = null;
   private currentCpuPercent: number = 0;
@@ -40,8 +58,10 @@ export class MetricsStore {
   };
 
   constructor(options: { maxLogs?: number } = {}) {
-    this.maxLogs = options.maxLogs || 1000;
-    this.logs = [];
+    this.maxLogs = options.maxLogs || DEFAULT_MAX_LOGS;
+    this.logs = new Array(this.maxLogs).fill(null);
+    this.blockedEvents = new Array(MAX_BLOCKED_EVENTS).fill(null);
+    this.compressedEvents = new Array(MAX_COMPRESSED_EVENTS).fill(null);
     this.stats = {
       totalRequests: 0,
       totalResponseTime: 0,
@@ -59,6 +79,28 @@ export class MetricsStore {
     this.histogram = monitorEventLoopDelay({ resolution: 10 });
     this.histogram.enable();
     this.startCpuMonitoring();
+  }
+
+  /**
+   * Extract items from a circular buffer in chronological order.
+   * Returns only the last `limit` non-null entries.
+   */
+  private getOrderedSlice<T>(
+    buffer: (T | null)[],
+    head: number,
+    count: number,
+    limit: number,
+  ): T[] {
+    const len = buffer.length;
+    const take = Math.min(count, limit);
+    const result: T[] = new Array(take);
+
+    // The oldest entry in the window starts at (head - take) wrapped around
+    const start = (head - take + len) % len;
+    for (let i = 0; i < take; i++) {
+      result[i] = buffer[(start + i) % len] as T;
+    }
+    return result;
   }
 
   private startCpuMonitoring(): void {
@@ -103,14 +145,11 @@ export class MetricsStore {
     this.lastCpuUsage = { idle: totalIdle, total: totalTick };
   }
 
-  /** Add a request log entry to the ring buffer. */
+  /** Add a request log entry to the circular buffer (O(1)). */
   recordLog(log: LogEntry): void {
-    this.logs.push(log);
-
-    // Ring buffer — drop oldest entries when full
-    if (this.logs.length > this.maxLogs) {
-      this.logs.shift();
-    }
+    this.logs[this.logHead] = log;
+    this.logHead = (this.logHead + 1) % this.maxLogs;
+    if (this.logCount < this.maxLogs) this.logCount++;
 
     // Update aggregate stats
     this.stats.totalRequests++;
@@ -187,18 +226,15 @@ export class MetricsStore {
   ): void {
     this.stats.rateLimitHits++;
 
-    // Track blocked event details
-    this.blockedEvents.push({
+    // Track blocked event details (O(1) circular buffer)
+    this.blockedEvents[this.blockedHead] = {
       ip,
       path,
       method,
       timestamp: Date.now(),
-    });
-
-    // Keep only last 100 blocked events
-    if (this.blockedEvents.length > 100) {
-      this.blockedEvents.shift();
-    }
+    };
+    this.blockedHead = (this.blockedHead + 1) % MAX_BLOCKED_EVENTS;
+    if (this.blockedCount < MAX_BLOCKED_EVENTS) this.blockedCount++;
 
     if (!this.stats.routes[routeKey]) {
       if (Object.keys(this.stats.routes).length >= this.maxRoutes) {
@@ -220,19 +256,17 @@ export class MetricsStore {
         ? Math.round(((originalSize - compressedSize) / originalSize) * 100)
         : 0;
 
-    this.compressedEvents.push({
+    // O(1) circular buffer
+    this.compressedEvents[this.compressedHead] = {
       path,
       method,
       originalSize,
       compressedSize,
       ratio,
       timestamp: Date.now(),
-    });
-
-    // Keep only last 100 compressed events
-    if (this.compressedEvents.length > 100) {
-      this.compressedEvents.shift();
-    }
+    };
+    this.compressedHead = (this.compressedHead + 1) % MAX_COMPRESSED_EVENTS;
+    if (this.compressedCount < MAX_COMPRESSED_EVENTS) this.compressedCount++;
   }
 
   recordCacheHit(): void {
@@ -322,9 +356,24 @@ export class MetricsStore {
       },
       statusCodes: { ...this.stats.statusCodes },
       routes: { ...this.stats.routes },
-      recentLogs: this.logs.slice(-100),
-      blockedEvents: [...this.blockedEvents],
-      compressedEvents: [...this.compressedEvents],
+      recentLogs: this.getOrderedSlice<LogEntry>(
+        this.logs,
+        this.logHead,
+        this.logCount,
+        DEFAULT_MAX_LOGS,
+      ),
+      blockedEvents: this.getOrderedSlice<BlockedEvent>(
+        this.blockedEvents,
+        this.blockedHead,
+        this.blockedCount,
+        MAX_BLOCKED_EVENTS,
+      ),
+      compressedEvents: this.getOrderedSlice<CompressedEvent>(
+        this.compressedEvents,
+        this.compressedHead,
+        this.compressedCount,
+        MAX_COMPRESSED_EVENTS,
+      ),
     };
 
     // Generate insights
@@ -335,7 +384,9 @@ export class MetricsStore {
 
   /** Reset all metrics. */
   reset(): void {
-    this.logs = [];
+    this.logs = new Array(this.maxLogs).fill(null);
+    this.logHead = 0;
+    this.logCount = 0;
     this.stats.totalRequests = 0;
     this.stats.totalResponseTime = 0;
     this.stats.slowRequests = 0;
@@ -347,8 +398,12 @@ export class MetricsStore {
     this.stats.statusCodes = {};
     this.stats.routes = {};
     this.stats.startTime = Date.now();
-    this.blockedEvents = [];
-    this.compressedEvents = [];
+    this.blockedEvents = new Array(MAX_BLOCKED_EVENTS).fill(null);
+    this.blockedHead = 0;
+    this.blockedCount = 0;
+    this.compressedEvents = new Array(MAX_COMPRESSED_EVENTS).fill(null);
+    this.compressedHead = 0;
+    this.compressedCount = 0;
     this.histogram.disable();
     this.histogram = monitorEventLoopDelay({ resolution: 10 });
     this.histogram.enable();

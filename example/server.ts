@@ -41,7 +41,16 @@ const toolkit = performanceToolkit({
     windowMs: 2 * 60 * 1000, // 2 minutes window
     max: 10, // 10 requests per window
   },
-  dashboard: true,
+  dashboard: {
+    enabled: true,
+    path: "/ept",
+    auth: { username: "admin", password: "ept-toolkit" },
+    exporter: {
+      enabled: true,
+      path: "/metrics",
+      requireAuth: false,
+    },
+  },
 });
 
 // 2. Setup Toolkit Middleware
@@ -164,6 +173,9 @@ app.listen(PORT, () => {
   console.log("  ────────────────────────────────────────────────");
   console.log(`  🚀 Server:    http://localhost:${PORT}`);
   console.log(`  📊 Dashboard: http://localhost:${PORT}/ept`);
+  console.log(
+    `  📈 Metrics:   http://localhost:${PORT}/ept/metrics (Prometheus)`,
+  );
   console.log("");
   console.log("  Try these endpoints:");
   console.log(

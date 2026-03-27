@@ -106,4 +106,71 @@ describe("Smart Rate Limiter", () => {
     // 2nd POST request - should be blocked
     await request(app).post("/api").expect(429);
   });
+
+  it("should exclude paths from rate limiting", async () => {
+    const app = express();
+    const toolkit = performanceToolkit({
+      rateLimit: {
+        enabled: true,
+        windowMs: 5000,
+        max: 1,
+        exclude: ["/health"],
+      },
+    });
+
+    app.use(toolkit.middleware);
+    app.get("/health", (req, res) => {
+      res.send("OK");
+    });
+    app.get("/api", (req, res) => {
+      res.send("OK");
+    });
+
+    // Excluded path should never be rate limited
+    await request(app).get("/health").expect(200);
+    await request(app).get("/health").expect(200);
+    await request(app).get("/health").expect(200);
+
+    // Regular path should be limited
+    await request(app).get("/api").expect(200);
+    await request(app).get("/api").expect(429);
+  });
+
+  it("should include rate limit headers in response", async () => {
+    const app = express();
+    const toolkit = performanceToolkit({
+      rateLimit: {
+        enabled: true,
+        windowMs: 5000,
+        max: 5,
+      },
+    });
+
+    app.use(toolkit.middleware);
+    app.get("/api", (req, res) => {
+      res.send("OK");
+    });
+
+    const res = await request(app).get("/api").expect(200);
+
+    expect(res.headers["x-ratelimit-limit"]).toBe("5");
+    expect(res.headers["x-ratelimit-remaining"]).toBeDefined();
+    expect(res.headers["x-ratelimit-reset"]).toBeDefined();
+  });
+
+  it("should accept redis config without error", () => {
+    // This test verifies that the rate limiter accepts a redis config
+    // without throwing during initialization (Redis connection will fail
+    // gracefully in the background, and requests fail-open)
+    expect(() => {
+      performanceToolkit({
+        rateLimit: {
+          enabled: true,
+          windowMs: 1000,
+          max: 10,
+          redis: { host: "127.0.0.1", port: 63790 }, // Invalid port — won't connect
+        },
+      });
+    }).not.toThrow();
+  });
 });
