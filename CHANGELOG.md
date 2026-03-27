@@ -9,6 +9,7 @@ All notable changes to this project will be documented in this file.
 - **Internalized Dashboard Routing** — The dashboard is now automatically mounted inside the toolkit middleware. Users no longer need to manually mount `toolkit.dashboardRouter`. A single `app.use(toolkit.middleware)` handles everything.
 - **Request Tracing**: Inject unique correlation IDs into headers and logs for distributed tracing.
 - **Health Check Endpoint**: Lightweight `/ept/health` for monitoring and liveness/readiness probes.
+- **Dashboard Theme Toggle**: Seamlessly switch between Premium Dark and Clean Light modes via the new Sun/Moon toggle.
 - **Restored `store` and `cache` on `ToolkitInstance`** — The public API now exposes `toolkit.store` (for direct metrics access) and `toolkit.cache` (for manual cache control like `toolkit.cache.clear()`).
 - **Redis-Backed Rate Limiting** — The rate limiter now supports optional Redis persistence (via the `redis` config option), allowing rate limit state to survive process restarts and be shared across cluster nodes. Fault tolerant: gracefully falls back to in-memory if Redis is unavailable.
 - **Prometheus Metrics Export** — Expose application and system metrics in Prometheus exposition format at `/ept/metrics` (configurable). This enables integration with Grafana, Datadog, and more.

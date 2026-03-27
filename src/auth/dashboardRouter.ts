@@ -48,6 +48,8 @@ export function createDashboardRouter(
     path: options.health?.path || DEFAULT_HEALTH_CHECK_OPTIONS.path,
   };
 
+  router.use(express.json());
+
   // Helper to extract session ID from cookie
   const getSessionId = (req: Request): string | null => {
     const cookie = req.headers.cookie || "";

@@ -68,7 +68,7 @@ function CircularGauge({
             cy="40"
             r={radius}
             fill="transparent"
-            stroke="rgba(255,255,255,0.05)"
+            stroke="var(--gauge-bg)"
             strokeWidth="6"
           />
           <circle
@@ -91,7 +91,7 @@ function CircularGauge({
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            color: "#fff",
+            color: "var(--text-100)",
           }}
         >
           <Icon
@@ -183,10 +183,10 @@ export function HealthCharts({
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
-            backgroundColor: "rgba(255,255,255,0.02)",
+            backgroundColor: "var(--surface-low)",
             padding: "1.25rem",
             borderRadius: "12px",
-            border: "1px solid rgba(255,255,255,0.05)",
+            border: "1px solid var(--border-subtle)",
           }}
         >
           <div style={{ display: "flex", gap: "2rem" }}>
@@ -248,10 +248,10 @@ export function HealthCharts({
         >
           <div
             style={{
-              backgroundColor: "rgba(0,0,0,0.2)",
-              padding: "1rem",
-              borderRadius: "12px",
-              border: "1px solid rgba(255,255,255,0.03)",
+            backgroundColor: "var(--chart-bg)",
+            padding: "1rem",
+            borderRadius: "12px",
+            border: "1px solid var(--border-subtle)",
             }}
           >
             <div
@@ -290,10 +290,10 @@ export function HealthCharts({
           </div>
           <div
             style={{
-              backgroundColor: "rgba(0,0,0,0.2)",
-              padding: "1rem",
-              borderRadius: "12px",
-              border: "1px solid rgba(255,255,255,0.03)",
+            backgroundColor: "var(--chart-bg)",
+            padding: "1rem",
+            borderRadius: "12px",
+            border: "1px solid var(--border-subtle)",
             }}
           >
             <div
@@ -332,10 +332,10 @@ export function HealthCharts({
           </div>
           <div
             style={{
-              backgroundColor: "rgba(0,0,0,0.2)",
-              padding: "1rem",
-              borderRadius: "12px",
-              border: "1px solid rgba(255,255,255,0.03)",
+            backgroundColor: "var(--chart-bg)",
+            padding: "1rem",
+            borderRadius: "12px",
+            border: "1px solid var(--border-subtle)",
             }}
           >
             <div
@@ -489,7 +489,7 @@ export function HealthCharts({
       <style>{`
         .spec-card {
           padding: 8px;
-          border-left: 1px solid rgba(255,255,255,0.05);
+          border-left: 1px solid var(--border-subtle);
         }
       `}</style>
     </div>

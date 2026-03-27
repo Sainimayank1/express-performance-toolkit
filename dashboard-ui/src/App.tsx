@@ -11,6 +11,7 @@ import {
 import { useMetrics } from "./hooks/useMetrics";
 import { formatUptime } from "./utils/formatters";
 import { Login } from "./components/Login";
+import { ThemeToggle } from "./components/ThemeToggle";
 
 // Pages
 import { OverviewPage } from "./pages/OverviewPage";
@@ -25,6 +26,19 @@ export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [isAuthRequired, setIsAuthRequired] = useState(false);
   const [readInsightKeys, setReadInsightKeys] = useState<Set<string>>(new Set());
+  const [theme, setTheme] = useState<"light" | "dark">(() => {
+    const saved = localStorage.getItem("ept-theme");
+    return (saved as "light" | "dark") || "dark";
+  });
+
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", theme);
+    localStorage.setItem("ept-theme", theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme((prev) => (prev === "light" ? "dark" : "light"));
+  };
 
   const markInsightRead = (key: string) => {
     setReadInsightKeys((prev) => {
@@ -181,6 +195,7 @@ export default function App() {
               {data.eventLoopLag}ms
             </span>
           </div>
+          <ThemeToggle theme={theme} onToggle={toggleTheme} />
           {isAuthRequired && (
             <button
               className="nav-btn logout-btn"
