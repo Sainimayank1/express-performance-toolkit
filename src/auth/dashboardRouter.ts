@@ -10,6 +10,7 @@ import {
   API_METRICS_PATH,
   API_RESET_PATH,
   DEFAULT_METRICS_PATH,
+  DEFAULT_HEALTH_CHECK_OPTIONS,
 } from "../constants";
 import { SessionStore } from "./session";
 import { PrometheusExporter } from "../tools/exporter";
@@ -42,7 +43,10 @@ export function createDashboardRouter(
     requireAuth: options.exporter?.requireAuth || false,
   };
 
-  router.use(express.json());
+  const healthConfig = {
+    enabled: options.health?.enabled || DEFAULT_HEALTH_CHECK_OPTIONS.enabled,
+    path: options.health?.path || DEFAULT_HEALTH_CHECK_OPTIONS.path,
+  };
 
   // Helper to extract session ID from cookie
   const getSessionId = (req: Request): string | null => {
@@ -139,6 +143,28 @@ export function createDashboardRouter(
     } else {
       router.get(metricsExportConfig.path, metricsHandler);
     }
+  }
+
+  // Health check endpoint
+  if (healthConfig.enabled) {
+    router.get(healthConfig.path, (_req: Request, res: Response) => {
+      const mem = process.memoryUsage();
+      const metrics = store.getMetrics();
+
+      res.json({
+        status: "ok",
+        uptime: Math.floor(process.uptime()),
+        timestamp: new Date().toISOString(),
+        memory: {
+          heapUsed: Math.round(mem.heapUsed / 1024 / 1024),
+          heapLimit: Math.round(metrics.memoryUsage.heapLimit / 1024 / 1024),
+          pressure: parseFloat(
+            (mem.heapUsed / metrics.memoryUsage.heapLimit).toFixed(2),
+          ),
+        },
+        eventLoopLag: metrics.eventLoopLag,
+      });
+    });
   }
 
   // Reset metrics endpoint (Protected)

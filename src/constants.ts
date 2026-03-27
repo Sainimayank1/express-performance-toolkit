@@ -11,6 +11,7 @@ export const DEFAULT_DASHBOARD_PATH = "/ept";
 export const DEFAULT_METRICS_PATH = "/metrics";
 export const API_METRICS_PATH = "/api/metrics";
 export const API_RESET_PATH = "/api/reset";
+export const DEFAULT_HEALTH_PATH = "/health";
 
 // Rate Limiting
 export const DEFAULT_RATE_LIMIT_OPTIONS = {
@@ -66,6 +67,12 @@ export const DEFAULT_CACHE_OPTIONS = {
 export const DEFAULT_TRACING_OPTIONS = {
   enabled: true,
   headerName: "x-request-id",
+};
+
+// Health Check
+export const DEFAULT_HEALTH_CHECK_OPTIONS = {
+  enabled: true,
+  path: DEFAULT_HEALTH_PATH,
 };
 
 // Store

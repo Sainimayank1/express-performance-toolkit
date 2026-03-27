@@ -91,6 +91,11 @@ export interface DashboardOptions {
    * If enabled, metrics will be exposed at `${path}${metricsPath}`.
    */
   exporter?: MetricsExporterOptions;
+  /**
+   * Health check configuration.
+   * If enabled, a lightweight health status will be exposed at `${path}${healthPath}`.
+   */
+  health?: HealthCheckOptions;
 }
 
 export interface MetricsExporterOptions {
@@ -100,6 +105,13 @@ export interface MetricsExporterOptions {
   path?: string;
   /** If true, the metrics endpoint will require authentication (default: false) */
   requireAuth?: boolean;
+}
+
+export interface HealthCheckOptions {
+  /** Enable health check endpoint (default: true) */
+  enabled?: boolean;
+  /** Health check path relative to dashboard path (default: '/health') */
+  path?: string;
 }
 
 export interface TracingOptions {
