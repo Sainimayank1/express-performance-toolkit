@@ -79,6 +79,8 @@ export const DEFAULT_HEALTH_CHECK_OPTIONS = {
 export const MAX_BLOCKED_EVENTS = 100;
 export const MAX_COMPRESSED_EVENTS = 100;
 export const DEFAULT_MAX_LOGS = 1000;
+export const DEFAULT_HISTORY_INTERVAL = 30000; // 30 seconds
+export const DEFAULT_HISTORY_MAX_POINTS = 60; // 30 minutes
 
 // Session Store
 export const DEFAULT_SESSION_TTL = 24 * 60 * 60 * 1000; // 24 hours

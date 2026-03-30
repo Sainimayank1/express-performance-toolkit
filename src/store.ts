@@ -4,6 +4,7 @@ import {
   RouteStats,
   BlockedEvent,
   CompressedEvent,
+  HistoryPoint,
 } from "./types";
 import { monitorEventLoopDelay } from "perf_hooks";
 import { analyzeMetrics } from "./tools/analyzer";
@@ -13,6 +14,7 @@ import {
   DEFAULT_MAX_LOGS,
   MAX_BLOCKED_EVENTS,
   MAX_COMPRESSED_EVENTS,
+  DEFAULT_HISTORY_MAX_POINTS,
 } from "./constants";
 
 /**
@@ -38,6 +40,19 @@ export class MetricsStore {
   private compressedHead: number = 0;
   private compressedCount: number = 0;
 
+  // O(1) circular buffer for history points
+  private history: (HistoryPoint | null)[];
+  private historyHead: number = 0;
+  private historyCount: number = 0;
+  private maxHistoryPoints: number;
+
+  private lastSnapshotData = {
+    totalRequests: 0,
+    totalResponseTime: 0,
+    totalErrors: 0,
+    timestamp: Date.now(),
+  };
+
   private histogram: ReturnType<typeof monitorEventLoopDelay>;
   private lastCpuUsage: { idle: number; total: number } | null = null;
   private currentCpuPercent: number = 0;
@@ -54,14 +69,18 @@ export class MetricsStore {
     cacheSize: number;
     statusCodes: Record<number, number>;
     routes: Record<string, RouteStats>;
+    totalErrors: number;
     startTime: number;
   };
 
-  constructor(options: { maxLogs?: number } = {}) {
+  constructor(options: { maxLogs?: number; maxHistoryPoints?: number } = {}) {
     this.maxLogs = options.maxLogs || DEFAULT_MAX_LOGS;
+    this.maxHistoryPoints =
+      options.maxHistoryPoints || DEFAULT_HISTORY_MAX_POINTS;
     this.logs = new Array(this.maxLogs).fill(null);
     this.blockedEvents = new Array(MAX_BLOCKED_EVENTS).fill(null);
     this.compressedEvents = new Array(MAX_COMPRESSED_EVENTS).fill(null);
+    this.history = new Array(this.maxHistoryPoints).fill(null);
     this.stats = {
       totalRequests: 0,
       totalResponseTime: 0,
@@ -74,6 +93,7 @@ export class MetricsStore {
       cacheSize: 0,
       statusCodes: {},
       routes: {},
+      totalErrors: 0,
       startTime: Date.now(),
     };
     this.histogram = monitorEventLoopDelay({ resolution: 10 });
@@ -181,6 +201,9 @@ export class MetricsStore {
 
     const code = log.statusCode;
     this.stats.statusCodes[code] = (this.stats.statusCodes[code] || 0) + 1;
+    if (code >= 400) {
+      this.stats.totalErrors++;
+    }
   }
 
   private createNewRouteStats(): RouteStats {
@@ -281,6 +304,49 @@ export class MetricsStore {
     this.stats.cacheSize = size;
   }
 
+  /** Capture a point-in-time snapshot of metrics for history charts. */
+  takeSnapshot(): void {
+    const currentTotalRequests = this.stats.totalRequests;
+    const currentTotalResponseTime = this.stats.totalResponseTime;
+    const currentTotalErrors = this.stats.totalErrors;
+    const now = Date.now();
+
+    const requestDelta = Math.max(
+      0,
+      currentTotalRequests - this.lastSnapshotData.totalRequests,
+    );
+    const errorDelta = Math.max(
+      0,
+      currentTotalErrors - this.lastSnapshotData.totalErrors,
+    );
+    const timeDelta =
+      currentTotalResponseTime - this.lastSnapshotData.totalResponseTime;
+
+    const avgResponseTime =
+      requestDelta > 0 ? Math.round(timeDelta / requestDelta) : 0;
+
+    const snapshot: HistoryPoint = {
+      timestamp: now,
+      requests: requestDelta,
+      errors: errorDelta,
+      avgResponseTime,
+      cpuPercent: this.currentCpuPercent,
+      memoryUsed: Math.round(process.memoryUsage().heapUsed / 1024 / 1024), // MB
+      eventLoopLag: Math.round(this.histogram.mean / 1e6),
+    };
+
+    this.history[this.historyHead] = snapshot;
+    this.historyHead = (this.historyHead + 1) % this.maxHistoryPoints;
+    if (this.historyCount < this.maxHistoryPoints) this.historyCount++;
+
+    this.lastSnapshotData = {
+      totalRequests: currentTotalRequests,
+      totalResponseTime: currentTotalResponseTime,
+      totalErrors: currentTotalErrors,
+      timestamp: now,
+    };
+  }
+
   private calculateCacheHitRate(): number {
     const cacheTotal = this.stats.cacheHits + this.stats.cacheMisses;
     return cacheTotal > 0
@@ -374,6 +440,12 @@ export class MetricsStore {
         this.compressedCount,
         MAX_COMPRESSED_EVENTS,
       ),
+      history: this.getOrderedSlice<HistoryPoint>(
+        this.history,
+        this.historyHead,
+        this.historyCount,
+        this.maxHistoryPoints,
+      ),
     };
 
     // Generate insights
@@ -404,6 +476,16 @@ export class MetricsStore {
     this.compressedEvents = new Array(MAX_COMPRESSED_EVENTS).fill(null);
     this.compressedHead = 0;
     this.compressedCount = 0;
+    this.history = new Array(this.maxHistoryPoints).fill(null);
+    this.historyHead = 0;
+    this.historyCount = 0;
+    this.lastSnapshotData = {
+      totalRequests: 0,
+      totalResponseTime: 0,
+      totalErrors: 0,
+      timestamp: Date.now(),
+    };
+    this.stats.totalErrors = 0;
     this.histogram.disable();
     this.histogram = monitorEventLoopDelay({ resolution: 10 });
     this.histogram.enable();

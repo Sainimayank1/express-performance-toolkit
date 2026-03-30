@@ -13,6 +13,7 @@ All notable changes to this project will be documented in this file.
 - **Restored `store` and `cache` on `ToolkitInstance`** — The public API now exposes `toolkit.store` (for direct metrics access) and `toolkit.cache` (for manual cache control like `toolkit.cache.clear()`).
 - **Redis-Backed Rate Limiting** — The rate limiter now supports optional Redis persistence (via the `redis` config option), allowing rate limit state to survive process restarts and be shared across cluster nodes. Fault tolerant: gracefully falls back to in-memory if Redis is unavailable.
 - **Prometheus Metrics Export** — Expose application and system metrics in Prometheus exposition format at `/ept/metrics` (configurable). This enables integration with Grafana, Datadog, and more.
+- **Metrics History**: Stores periodic snapshots (default every 30s) in a circular buffer to enable time-series charts on the dashboard.
 - **Smart Webhook / Alert Notifications** — Edge-triggered HTTP alerts when metric thresholds are breached (response time, memory, CPU, etc.). Fires exactly once per breach to prevent alert fatigue, and resets after recovery. Supports any HTTP endpoint via a unified `webhooks` array. Each entry can be a plain URL (generic JSON POST) or a `WebhookConfig` object with a `format` of `'slack'` (Block Kit), `'discord'` (Embed), or `'generic'`. Includes custom `onAlert` callback and `>=`/`<=`/`<`/`>` comparators.
 ### ⚡ Performance
 

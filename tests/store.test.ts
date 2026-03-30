@@ -117,6 +117,54 @@ describe("MetricsStore", () => {
     expect(typeof metrics.eventLoopLag).toBe("number");
     expect(metrics.memoryUsage).toBeDefined();
     expect(typeof metrics.memoryUsage.rss).toBe("number");
+    expect(typeof metrics.memoryUsage.rss).toBe("number");
     expect(typeof metrics.memoryUsage.heapUsed).toBe("number");
+  });
+
+  describe("History Snapshots", () => {
+    it("should initialize with an empty history", () => {
+      const metrics = store.getMetrics();
+      expect(metrics.history).toBeDefined();
+      expect(metrics.history.length).toBe(0);
+    });
+
+    it("should capture snapshots and calculate deltas", () => {
+      // 1. Initial snapshot
+      store.takeSnapshot();
+
+      // 2. Record some activity
+      store.recordLog(makeEntry({ responseTime: 100 }));
+      store.recordLog(makeEntry({ responseTime: 200 }));
+      store.recordLog(makeEntry({ statusCode: 500 })); // 1 error
+
+      // 3. Take second snapshot
+      store.takeSnapshot();
+
+      const metrics = store.getMetrics();
+      expect(metrics.history.length).toBe(2);
+
+      const lastPoint = metrics.history[1];
+      expect(lastPoint.requests).toBe(3);
+      expect(lastPoint.errors).toBe(1);
+      expect(lastPoint.avgResponseTime).toBe(117); // (100+200+50)/3 = 350/3 = 116.66 -> 117
+    });
+
+    it("should respect maxHistoryPoints", () => {
+      store = new MetricsStore({ maxHistoryPoints: 3 });
+      store.takeSnapshot(); // 1
+      store.takeSnapshot(); // 2
+      store.takeSnapshot(); // 3
+      store.takeSnapshot(); // 4 (should overwrite 1)
+
+      const metrics = store.getMetrics();
+      expect(metrics.history.length).toBe(3);
+    });
+
+    it("should reset history", () => {
+      store.takeSnapshot();
+      store.reset();
+      const metrics = store.getMetrics();
+      expect(metrics.history.length).toBe(0);
+    });
   });
 });

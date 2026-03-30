@@ -243,6 +243,20 @@ export interface ToolkitOptions {
   health?: boolean | HealthCheckOptions;
   /** Max log entries to keep in memory (default: 1000) */
   maxLogs?: number;
+  /**
+   * Metrics history configuration.
+   * If enabled, stores periodic snapshots for time-series charts.
+   */
+  history?: boolean | HistoryOptions;
+}
+
+export interface HistoryOptions {
+  /** Enable history snapshots (default: true) */
+  enabled?: boolean;
+  /** Snapshot interval in milliseconds (default: 30000) */
+  intervalMs?: number;
+  /** Max history points to keep in memory (default: 60) */
+  maxPoints?: number;
 }
 
 // ─── Data Types ──────────────────────────────────────────────────────
@@ -302,6 +316,16 @@ export interface Insight {
   detail?: string;
 }
 
+export interface HistoryPoint {
+  timestamp: number;
+  requests: number;
+  avgResponseTime: number;
+  cpuPercent: number;
+  memoryUsed: number;
+  errors: number;
+  eventLoopLag: number;
+}
+
 export interface MetricSnapshot {
   uptime: number;
   totalRequests: number;
@@ -329,6 +353,7 @@ export interface MetricSnapshot {
   recentLogs: LogEntry[];
   blockedEvents: BlockedEvent[];
   compressedEvents: CompressedEvent[];
+  history: HistoryPoint[];
   systemInfo: {
     nodeVersion: string;
     platform: string;
@@ -374,6 +399,7 @@ export interface Metrics {
   recentLogs: LogEntry[];
   blockedEvents: BlockedEvent[];
   compressedEvents: CompressedEvent[];
+  history: HistoryPoint[];
   systemInfo: {
     nodeVersion: string;
     platform: string;

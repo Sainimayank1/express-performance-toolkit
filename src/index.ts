@@ -20,11 +20,14 @@ import {
   ToolkitInstance,
   AlertOptions,
   HealthCheckOptions,
+  HistoryOptions,
 } from "./types";
 import {
   DEFAULT_DASHBOARD_PATH,
   DEFAULT_TRACING_OPTIONS,
   DEFAULT_HEALTH_CHECK_OPTIONS,
+  DEFAULT_HISTORY_INTERVAL,
+  DEFAULT_HISTORY_MAX_POINTS,
 } from "./constants";
 
 /** Rate Limiter Setup */
@@ -176,6 +179,28 @@ function setupAlertManager(
   return alerter;
 }
 
+/** History Snapshot Setup */
+function setupHistory(
+  option: boolean | HistoryOptions | undefined,
+  store: MetricsStore,
+): void {
+  const config = normalizeOption<HistoryOptions>(option, { enabled: true });
+  if (config.enabled !== false) {
+    const intervalMs = config.intervalMs || DEFAULT_HISTORY_INTERVAL;
+    const interval = setInterval(() => {
+      store.takeSnapshot();
+    }, intervalMs);
+
+    // Ensure the interval doesn't keep the process alive
+    if (interval.unref) {
+      interval.unref();
+    }
+
+    // Take immediate first snapshot
+    store.takeSnapshot();
+  }
+}
+
 /** Composition Helpers */
 function createComposedMiddleware(middlewares: any[]) {
   return function composedMiddleware(
@@ -242,7 +267,14 @@ export function performanceToolkit(
     res: Response,
     next: NextFunction,
   ) => void)[] = [];
-  const store = new MetricsStore({ maxLogs: options.maxLogs || 1000 });
+
+  const historyConfig = normalizeOption<HistoryOptions>(options.history, {
+    enabled: true,
+  });
+  const store = new MetricsStore({
+    maxLogs: options.maxLogs || 1000,
+    maxHistoryPoints: historyConfig.maxPoints || DEFAULT_HISTORY_MAX_POINTS,
+  });
 
   // 1. Dashboard Config
   const dashboardConfig = normalizeOption<DashboardOptions>(options.dashboard, {
@@ -259,6 +291,7 @@ export function performanceToolkit(
   setupQueryHelper(options.queryHelper, middlewares);
   setupHealthCheck(options.health, middlewares, store);
   const alerter = setupAlertManager(options.alerts, store);
+  setupHistory(options.history, store);
 
   const dashboardRouter = createDashboardRouter(store, {
     ...dashboardConfig,

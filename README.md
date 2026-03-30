@@ -58,6 +58,7 @@ npm install express-performance-toolkit
 - **N+1 Query Tracking:** Effortlessly detect inefficient database patterns with simple instrumentation.
 - **Performance Dashboard:** A sleek, real-time UI to monitor your server's health, throughput, and anomalies.
 - **Metrics Export:** Expose application and system metrics in Prometheus format (default: `/ept/metrics`) for Grafana and OTEL compatibility.
+- **Metrics History:** Automatic time-series snapshots for visualizing throughput, latency, and resource trends over time.
 
 ## Docs & Community
 
@@ -105,6 +106,11 @@ const toolkit = performanceToolkit({
   tracing: {
     enabled: true, // default true
     headerName: "x-request-id", // default x-request-id
+  },
+  history: {
+    enabled: true,
+    intervalMs: 30000, // Snapshot every 30s
+    maxPoints: 60, // Keep 30 mins of history
   },
 });
 
