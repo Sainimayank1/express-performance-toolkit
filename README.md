@@ -52,7 +52,8 @@ npm install express-performance-toolkit
 - **Response Compression:** Automatic Gzip/Deflate/Brotli compression to minimize bandwidth usage.
 - **Smart Rate Limiting:** IP-based protection with real-time tracking of blocked traffic.
 - **Slow Request Detection:** Built-in observability with structured logging and performance alerts.
-- **Health Check:** Lightweight JSON endpoint for liveness/readiness monitoring.
+- **Webhook Alerting:** Smart edge-triggered notifications for Slack, Discord, and custom integrations to prevent alert fatigue.
+- **Health Check:** Top-level lightweight JSON endpoint for liveness/readiness orchestration probes.
 - **Request Tracing:** Automatic generation and propagation of `X-Request-Id` for distributed tracing.
 - **N+1 Query Tracking:** Effortlessly detect inefficient database patterns with simple instrumentation.
 - **Performance Dashboard:** A sleek, real-time UI to monitor your server's health, throughput, and anomalies.
@@ -92,6 +93,14 @@ const toolkit = performanceToolkit({
     path: "/ept", // Dashboard automatically mounted here
     auth: { username: "admin", password: "ept-toolkit" }, // Default credentials
     exporter: { enabled: true, path: "/metrics", requireAuth: false }, // Prometheus export
+  },
+  health: {
+    enabled: true,
+    path: "/health",
+  },
+  alerts: {
+    webhooks: [process.env.SLACK_WEBHOOK_URL],
+    rules: [{ metric: "avgResponseTime", threshold: 1500 }]
   },
   tracing: {
     enabled: true, // default true

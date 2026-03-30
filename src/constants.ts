@@ -83,3 +83,11 @@ export const DEFAULT_MAX_LOGS = 1000;
 // Session Store
 export const DEFAULT_SESSION_TTL = 24 * 60 * 60 * 1000; // 24 hours
 export const DEFAULT_MAX_SESSIONS = 1000;
+
+// Alerter
+export const DEFAULT_ALERT_INTERVAL_MS = 15_000; // 15 seconds
+export const WEBHOOK_FORMAT = {
+  slack: "slack",
+  discord: "discord",
+  generic: "generic",
+} as const;

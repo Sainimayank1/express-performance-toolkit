@@ -8,16 +8,18 @@ describe("Health Check Endpoint", () => {
   beforeEach(() => {
     app = express();
     const toolkit = performanceToolkit({
+      logging: false,
+      // health is enabled by default at /health (top-level, not under dashboard)
       dashboard: {
         enabled: true,
-        auth: { username: "admin", password: "password" }, // Auth enabled for dashboard
+        auth: { username: "admin", password: "password" },
       },
     });
     app.use(toolkit.middleware);
   });
 
-  it("should return 200 OK and health info at /ept/health", async () => {
-    const response = await request(app).get("/ept/health");
+  it("should return 200 OK and health info at /health", async () => {
+    const response = await request(app).get("/health");
 
     expect(response.status).toBe(200);
     expect(response.body).toHaveProperty("status", "ok");
@@ -29,45 +31,68 @@ describe("Health Check Endpoint", () => {
   });
 
   it("should be accessible even when dashboard auth is enabled", async () => {
-    // API metrics endpoint should be 401 without auth
+    // Dashboard API metrics should still require auth
     const dashResponse = await request(app).get("/ept/api/metrics");
     expect(dashResponse.status).toBe(401);
 
-    // Health check should still be 200 (public)
-    const healthResponse = await request(app).get("/ept/health");
+    // Health check is public and top-level — NOT behind dashboard auth
+    const healthResponse = await request(app).get("/health");
     expect(healthResponse.status).toBe(200);
   });
 
-  it("should be accessible at custom path", async () => {
+  it("should be accessible at a custom absolute path", async () => {
     const customApp = express();
     const toolkit = performanceToolkit({
-      dashboard: {
-        enabled: true,
-        health: { path: "/status" },
-      },
+      logging: false,
+      dashboard: { enabled: true },
+      health: { path: "/status" },
     });
     customApp.use(toolkit.middleware);
 
-    const response = await request(customApp).get("/ept/status");
+    const response = await request(customApp).get("/status");
     expect(response.status).toBe(200);
     expect(response.body.status).toBe("ok");
+
+    // Old path should 404
+    const oldPath = await request(customApp).get("/health");
+    expect(oldPath.status).toBe(404);
   });
 
   it("should return 404 if disabled", async () => {
     const disabledApp = express();
     const toolkit = performanceToolkit({
-      dashboard: {
-        enabled: true,
-        health: { enabled: false },
-      },
+      logging: false,
+      dashboard: { enabled: true },
+      health: { enabled: false },
     });
     disabledApp.use(toolkit.middleware);
 
-    const response = await request(disabledApp).get("/ept/health");
-    if (response.status !== 404) {
-      console.log("Response body:", response.body);
-      console.log("Response text:", response.text.substring(0, 100));
-    }
+    const response = await request(disabledApp).get("/health");
     expect(response.status).toBe(404);
+  });
+
+  it("should be fully disabled when health: false is passed", async () => {
+    const disabledApp = express();
+    const toolkit = performanceToolkit({
+      logging: false,
+      health: false,
+    });
+    disabledApp.use(toolkit.middleware);
+
+    const response = await request(disabledApp).get("/health");
+    expect(response.status).toBe(404);
+  });
+
+  it("should work with health: true (shorthand for defaults)", async () => {
+    const shortApp = express();
+    const toolkit = performanceToolkit({
+      logging: false,
+      health: true,
+    });
+    shortApp.use(toolkit.middleware);
+
+    const response = await request(shortApp).get("/health");
+    expect(response.status).toBe(200);
+    expect(response.body.status).toBe("ok");
   });
 });

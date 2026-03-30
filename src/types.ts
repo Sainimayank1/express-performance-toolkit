@@ -1,7 +1,9 @@
 import { Request, Response, NextFunction, Router } from "express";
 import { MetricsStore } from "./store";
+import { WEBHOOK_FORMAT } from "./constants";
 
 // ─── Toolkit Instance Type ────────────────────────────────────────────
+
 export interface ToolkitInstance {
   /** The composed Express middleware */
   middleware: Router;
@@ -9,9 +11,12 @@ export interface ToolkitInstance {
   cache: CacheMiddleware | null;
   /** The underlying metrics store */
   store: MetricsStore;
+  /** The alert manager instance (if alerts are configured) */
+  alerter: AlertManager | null;
 }
 
-// ─── Configuration Types ────────────────────────────────────────────
+// ─── Configuration Types ─────────────────────────────────────────────
+
 export interface CacheOptions {
   /** Enable caching (default: true) */
   enabled?: boolean;
@@ -84,33 +89,32 @@ export interface DashboardOptions {
   enabled?: boolean;
   /** Dashboard mount path (default: '/ept') */
   path?: string;
-  /** Authentication settings. If provided, user must login to see dashboard. */
+  /** Authentication settings. Pass null to explicitly disable auth. */
   auth?: DashboardAuthOptions | null;
   /**
-   * Metrics export configuration (Prometheus / OTEL).
-   * If enabled, metrics will be exposed at `${path}${metricsPath}`.
+   * Prometheus / OTEL metrics export configuration.
+   * If enabled, metrics will be exposed at `${dashboardPath}/metrics`.
    */
   exporter?: MetricsExporterOptions;
-  /**
-   * Health check configuration.
-   * If enabled, a lightweight health status will be exposed at `${path}${healthPath}`.
-   */
-  health?: HealthCheckOptions;
 }
 
 export interface MetricsExporterOptions {
-  /** Enable metrics export (default: true if dashboard is enabled) */
+  /** Enable metrics export (default: false) */
   enabled?: boolean;
-  /** Path for metrics export relative to dashboard path (default: '/metrics') */
+  /** Path relative to dashboard path (default: '/metrics') */
   path?: string;
-  /** If true, the metrics endpoint will require authentication (default: false) */
+  /** Require dashboard auth to access metrics endpoint (default: false) */
   requireAuth?: boolean;
 }
 
 export interface HealthCheckOptions {
   /** Enable health check endpoint (default: true) */
   enabled?: boolean;
-  /** Health check path relative to dashboard path (default: '/health') */
+  /**
+   * Absolute URL path for the health endpoint (default: '/health').
+   * Independent of the dashboard path — directly reachable by load balancers
+   * and Kubernetes liveness/readiness probes without authentication.
+   */
   path?: string;
 }
 
@@ -122,28 +126,104 @@ export interface TracingOptions {
 export interface RateLimitOptions {
   /** Enable rate limiting (default: false) */
   enabled?: boolean;
-  /** Time window in milliseconds (default: 60000 - 1 minute) */
+  /** Time window in milliseconds (default: 60000 — 1 minute) */
   windowMs?: number;
-  /** Maximum number of requests per windowMs (default: 100) */
+  /** Maximum requests per window (default: 100) */
   max?: number;
   /** Response status code (default: 429) */
   statusCode?: number;
   /** Response message string or object */
   message?: string | object;
-  /** URL patterns to exclude from rate limiting (e.g. ['/ept*']) */
+  /** URL patterns to exclude from rate limiting */
   exclude?: (string | RegExp)[];
-  /** HTTP methods to rate limit (e.g. ['GET', 'POST']). If not provided, all methods except OPTIONS are limited. */
+  /** HTTP methods to rate limit. If omitted, all except OPTIONS are limited. */
   methods?: string[];
-  /** Optional Redis configuration for distributed rate limiting across cluster nodes */
+  /** Redis config for distributed rate limiting */
   redis?: RedisConfig | null;
 }
 
+// ─── Alert Types ─────────────────────────────────────────────────────
+
+export type AlertComparator = ">" | ">=" | "<" | "<=";
+
+/**
+ * A single alert rule evaluated on each polling interval.
+ * Supports dot-notation paths (e.g. `cpuUsage.percent`) and the derived
+ * helper `memoryUsage.heapPressure` (heap used as % of limit).
+ */
+export interface AlertRule {
+  /** Dot-notation metric path, e.g. 'avgResponseTime', 'cpuUsage.percent' */
+  metric: string;
+  /** Numeric threshold that triggers the alert */
+  threshold: number;
+  /** Comparison operator (default: '>') */
+  comparator?: AlertComparator;
+  /** Human-readable alert message */
+  message?: string;
+}
+
+export type WebhookFormat =
+  (typeof WEBHOOK_FORMAT)[keyof typeof WEBHOOK_FORMAT];
+
+export interface WebhookConfig {
+  /** HTTP POST target URL */
+  url: string;
+  /**
+   * Payload format:
+   * - `'slack'`   — Slack Block Kit
+   * - `'discord'` — Discord Embed
+   * - `'generic'` (default) — plain JSON `{ event, rule, value, timestamp }`
+   */
+  format?: WebhookFormat;
+}
+
+export interface AlertOptions {
+  /** Enable the alert system (default: true when this object is provided) */
+  enabled?: boolean;
+  /**
+   * One or more webhook targets. Each entry can be:
+   * - A plain URL string  → generic JSON POST
+   * - A `WebhookConfig`  → format-aware (Slack, Discord, or generic)
+   *
+   * Works with any HTTP service — Slack, Discord, PagerDuty, Teams, custom.
+   * @example
+   * ```ts
+   * webhooks: [
+   *   'https://ops.internal/alerts',
+   *   { url: 'https://hooks.slack.com/...', format: 'slack' },
+   *   { url: 'https://discord.com/api/webhooks/...', format: 'discord' },
+   * ]
+   * ```
+   */
+  webhooks?: (string | WebhookConfig)[];
+  /** Custom callback fired for every alert. Can be used alongside or instead of webhooks. */
+  onAlert?: (rule: AlertRule, value: number, metrics: Metrics) => void;
+  /** Alert rules to evaluate on each polling interval */
+  rules: AlertRule[];
+  /**
+   * How often to check metrics in milliseconds (default: 15000).
+   * Lower = more responsive, higher = less CPU overhead.
+   */
+  intervalMs?: number;
+}
+
+export interface AlertManager {
+  /** Start the periodic polling interval */
+  start(): void;
+  /** Stop the periodic polling interval */
+  stop(): void;
+  /** Manually trigger a metric check (useful for testing) */
+  check(): void;
+}
+
+// ─── Toolkit Options ─────────────────────────────────────────────────
+
 export interface ToolkitOptions {
-  /** Cache configuration — pass true for defaults or an object to customize */
+  /** Cache configuration — pass `true` for defaults or an object to customize */
   cache?: boolean | CacheOptions;
-  /** Compression configuration — pass true for defaults or an object */
+  /** Compression configuration — pass `true` for defaults or an object */
   compression?: boolean | CompressionOptions;
-  /** Request logging and slow API detection — pass true for defaults or an object */
+  /** Request logging and slow API detection — pass `true` for defaults or an object */
   logging?: boolean | LoggerOptions;
   /** Query optimization helper */
   queryHelper?: boolean | QueryHelperOptions;
@@ -151,13 +231,21 @@ export interface ToolkitOptions {
   dashboard?: boolean | DashboardOptions;
   /** Rate limiting */
   rateLimit?: boolean | RateLimitOptions;
-  /** Tracing configuration */
+  /** Distributed tracing (X-Request-Id correlation) */
   tracing?: boolean | TracingOptions;
+  /** Webhook / alert notification configuration */
+  alerts?: AlertOptions;
+  /**
+   * Health check endpoint — pass `true` for defaults or an object to customize.
+   * Mounts at an absolute path (default: `/health`), independent of the dashboard.
+   * Suitable for Kubernetes liveness/readiness probes and load balancer health checks.
+   */
+  health?: boolean | HealthCheckOptions;
   /** Max log entries to keep in memory (default: 1000) */
   maxLogs?: number;
 }
 
-// ─── Data Types ─────────────────────────────────────────────────────
+// ─── Data Types ──────────────────────────────────────────────────────
 
 export interface LogEntry {
   method: string;
@@ -331,7 +419,7 @@ export interface CacheMiddleware {
   adapter: CacheAdapter;
 }
 
-// ─── Express Augmentation ───────────────────────────────────────────
+// ─── Express Augmentation ─────────────────────────────────────────────
 
 declare global {
   /* eslint-disable-next-line @typescript-eslint/no-namespace */

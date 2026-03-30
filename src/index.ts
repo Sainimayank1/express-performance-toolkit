@@ -6,6 +6,7 @@ import { createLoggerMiddleware } from "./tools/logger";
 import { createQueryHelperMiddleware } from "./tools/queryHelper";
 import { createRateLimiter } from "./tools/rateLimit";
 import { createDashboardRouter } from "./auth/dashboardRouter";
+import { createAlertManager } from "./tools/alerter";
 import {
   ToolkitOptions,
   CacheOptions,
@@ -17,11 +18,16 @@ import {
   TracingOptions,
   CacheMiddleware,
   ToolkitInstance,
+  AlertOptions,
+  HealthCheckOptions,
 } from "./types";
-import { DEFAULT_DASHBOARD_PATH, DEFAULT_TRACING_OPTIONS } from "./constants";
+import {
+  DEFAULT_DASHBOARD_PATH,
+  DEFAULT_TRACING_OPTIONS,
+  DEFAULT_HEALTH_CHECK_OPTIONS,
+} from "./constants";
 
-/** Middleware Setup Helpers */
-
+/** Rate Limiter Setup */
 function setupRateLimiter(
   option: boolean | RateLimitOptions | undefined,
   store: MetricsStore,
@@ -35,6 +41,7 @@ function setupRateLimiter(
   }
 }
 
+/** Logger Setup */
 function setupLogger(
   option: boolean | LoggerOptions | undefined,
   store: MetricsStore,
@@ -48,6 +55,7 @@ function setupLogger(
   }
 }
 
+/** Cache Setup */
 function setupCache(
   option: boolean | CacheOptions | undefined,
   store: MetricsStore,
@@ -64,6 +72,7 @@ function setupCache(
   return null;
 }
 
+/** Compression Setup */
 function setupCompression(
   option: boolean | CompressionOptions | undefined,
   middlewares: any[],
@@ -75,6 +84,7 @@ function setupCompression(
   }
 }
 
+/** Query Helper Setup */
 function setupQueryHelper(
   option: boolean | QueryHelperOptions | undefined,
   middlewares: any[],
@@ -87,6 +97,7 @@ function setupQueryHelper(
   }
 }
 
+/** Tracing Setup */
 function setupTracing(
   option: boolean | TracingOptions | undefined,
   middlewares: ((req: Request, res: Response, next: NextFunction) => void)[],
@@ -113,6 +124,56 @@ function setupTracing(
       next();
     });
   }
+}
+
+/** Health Check Setup */
+function setupHealthCheck(
+  option: boolean | HealthCheckOptions | undefined,
+  middlewares: any[],
+  store: MetricsStore,
+) {
+  const config = normalizeOption<HealthCheckOptions>(option, {
+    enabled: true,
+  });
+
+  if (config.enabled !== false) {
+    const healthPath = config.path || DEFAULT_HEALTH_CHECK_OPTIONS.path;
+    middlewares.push((req: Request, res: Response, next: NextFunction) => {
+      if (req.path !== healthPath) return next();
+
+      const mem = process.memoryUsage();
+      const metrics = store.getMetrics();
+      res.json({
+        status: "ok",
+        uptime: Math.floor(process.uptime()),
+        timestamp: new Date().toISOString(),
+        memory: {
+          heapUsed: Math.round(mem.heapUsed / 1024 / 1024),
+          heapLimit: Math.round(metrics.memoryUsage.heapLimit / 1024 / 1024),
+          pressure: parseFloat(
+            (mem.heapUsed / metrics.memoryUsage.heapLimit).toFixed(2),
+          ),
+        },
+        eventLoopLag: metrics.eventLoopLag,
+      });
+    });
+  }
+}
+
+/** Alert Manager Setup */
+function setupAlertManager(
+  option: boolean | AlertOptions | undefined,
+  store: MetricsStore,
+) {
+  let alerter = null;
+  const isEnabled =
+    typeof option === "object" ? option.enabled !== false : option === true;
+  if (isEnabled) {
+    const config = typeof option === "object" ? option : ({} as AlertOptions);
+    alerter = createAlertManager(store, config);
+    alerter.start();
+  }
+  return alerter;
 }
 
 /** Composition Helpers */
@@ -166,7 +227,7 @@ function normalizeOption<T extends { enabled?: boolean }>(
  *
  * const toolkit = performanceToolkit({
  *   cache: true,
- *   logSlowRequests: true,
+ *   health: true,
  *   dashboard: true,
  * });
  *
@@ -196,6 +257,8 @@ export function performanceToolkit(
   const cache = setupCache(options.cache, store, middlewares, dashboardPath);
   setupCompression(options.compression, middlewares, store);
   setupQueryHelper(options.queryHelper, middlewares);
+  setupHealthCheck(options.health, middlewares, store);
+  const alerter = setupAlertManager(options.alerts, store);
 
   const dashboardRouter = createDashboardRouter(store, {
     ...dashboardConfig,
@@ -207,9 +270,6 @@ export function performanceToolkit(
   // Mount dashboard internally
   if (dashboardConfig.enabled !== false) {
     mainRouter.use(dashboardPath, dashboardRouter);
-  }
-
-  if (dashboardConfig.enabled !== false) {
     console.info(
       `[Express Performance Toolkit] Dashboard available at: ${dashboardPath}`,
     );
@@ -221,6 +281,7 @@ export function performanceToolkit(
     middleware: mainRouter,
     store,
     cache,
+    alerter,
   } as ToolkitInstance;
 }
 
@@ -231,4 +292,5 @@ export { createLoggerMiddleware } from "./tools/logger";
 export { createQueryHelperMiddleware } from "./tools/queryHelper";
 export { createRateLimiter } from "./tools/rateLimit";
 export { createDashboardRouter } from "./auth/dashboardRouter";
+export { createAlertManager } from "./tools/alerter";
 export * from "./types";
