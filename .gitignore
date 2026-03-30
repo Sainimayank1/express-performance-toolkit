@@ -6,6 +6,5 @@ coverage/
 dist/
 .DS_Store
 tsconfig.tsbuildinfo
-docs
 website
 .agent

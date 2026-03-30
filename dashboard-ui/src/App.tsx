@@ -12,6 +12,8 @@ import { useMetrics } from "./hooks/useMetrics";
 import { formatUptime } from "./utils/formatters";
 import { Login } from "./components/Login";
 import { ThemeToggle } from "./components/ThemeToggle";
+import { downloadJSON } from "./utils/exportUtils";
+import { Download } from "lucide-react";
 
 // Pages
 import { OverviewPage } from "./pages/OverviewPage";
@@ -195,6 +197,14 @@ export default function App() {
               {data.eventLoopLag}ms
             </span>
           </div>
+          <button
+            className="nav-btn"
+            onClick={() => downloadJSON(data, `ept-metrics-${new Date().getTime()}`)}
+            title="Export Metrics as JSON"
+            style={{ padding: '6px' }}
+          >
+            <Download size={16} />
+          </button>
           <ThemeToggle theme={theme} onToggle={toggleTheme} />
           {isAuthRequired && (
             <button

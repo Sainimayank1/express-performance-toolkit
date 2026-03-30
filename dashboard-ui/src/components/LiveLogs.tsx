@@ -1,11 +1,14 @@
 import { useState } from "react";
 import type { LogEntry } from "../hooks/useMetrics";
 import { fTime, getStatusClass, getTimeClass } from "../utils/formatters";
+import { Download } from "lucide-react";
+import { downloadCSV } from "../utils/exportUtils";
 
 export function LiveLogs({ logs }: { logs: LogEntry[] }) {
   const [filter, setFilter] = useState<"all" | "slow" | "cached" | "errors">(
     "all",
   );
+  const [methodFilter, setMethodFilter] = useState<string>("ALL");
   const [search, setSearch] = useState("");
 
   let filtered = logs;
@@ -14,20 +17,47 @@ export function LiveLogs({ logs }: { logs: LogEntry[] }) {
   else if (filter === "errors")
     filtered = logs.filter((l) => l.statusCode >= 400);
 
-  if (search) {
-    const s = search.toLowerCase();
-    filtered = filtered.filter(
-      (l) =>
-        l.requestId?.toLowerCase().includes(s) ||
-        l.path.toLowerCase().includes(s),
-    );
+  if (methodFilter !== "ALL") {
+    filtered = filtered.filter((l) => l.method === methodFilter);
   }
+
+  if (search) {
+    const terms = search.toLowerCase().split(" ").filter(Boolean);
+    filtered = filtered.filter((l) => {
+      const logStr = `${l.method} ${l.path} ${l.requestId} ${l.statusCode}`.toLowerCase();
+      return terms.every((term) => logStr.includes(term));
+    });
+  }
+
+  const handleExportCSV = () => {
+    downloadCSV(filtered, `ept-logs-${new Date().getTime()}`);
+  };
+
+  const methods = ["ALL", "GET", "POST", "PUT", "DELETE", "PATCH"];
 
   return (
     <div className="panel animate-in delay-5">
-      <div className="panel-header">
+      <div className="panel-header" style={{ flexWrap: 'wrap', gap: '12px' }}>
         <div className="panel-title">📋 Live Request Stream</div>
+        
         <div className="filters">
+          <select 
+            value={methodFilter} 
+            onChange={(e) => setMethodFilter((e.target as HTMLSelectElement).value)}
+            className="filter-select"
+            style={{
+              padding: "4px 8px",
+              borderRadius: "4px",
+              border: "1px solid var(--border)",
+              background: "var(--bg-200)",
+              color: "var(--text-100)",
+              fontSize: "12px",
+              marginRight: "8px"
+            }}
+          >
+            {methods.map(m => <option key={m} value={m}>{m}</option>)}
+          </select>
+
           <button
             className={`filter-btn ${filter === "all" ? "active" : ""}`}
             onClick={() => setFilter("all")}
@@ -53,10 +83,11 @@ export function LiveLogs({ logs }: { logs: LogEntry[] }) {
             Errors
           </button>
         </div>
+
         <div className="search-box">
           <input
             type="text"
-            placeholder="Search by Request ID or Path..."
+            placeholder="Search logs..."
             value={search}
             onChange={(e) => setSearch((e.target as HTMLInputElement).value)}
             style={{
@@ -66,10 +97,19 @@ export function LiveLogs({ logs }: { logs: LogEntry[] }) {
               background: "var(--bg-200)",
               color: "var(--text-100)",
               fontSize: "12px",
-              width: "200px",
+              width: "180px",
             }}
           />
         </div>
+
+        <button 
+          onClick={handleExportCSV}
+          className="nav-btn"
+          title="Export as CSV"
+          style={{ padding: '6px 12px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}
+        >
+          <Download size={14} /> Export CSV
+        </button>
       </div>
       <div className="panel-body" style={{ padding: 0, maxHeight: "500px" }}>
         <div className="table-container">

@@ -147,18 +147,36 @@ export function createDashboardRouter(
     res.json({ success: true, message: "Metrics reset" });
   });
 
-  // Robust UI path resolution:
-  // 1. When running from 'dist/dashboard/dashboardRouter.js', UI is at '../dashboard-ui'
-  // 2. When running from 'src/dashboard/dashboardRouter.ts' (ts-node), UI is at '../../dashboard-ui/dist'
-  const distPath = path.resolve(__dirname, "../dashboard-ui");
-  const devPath = path.resolve(__dirname, "../../dashboard-ui/dist");
+  // Lazy-load dashboard UI assets to reduce initial middleware overhead
+  let resolvedUiPath: string | null = null;
 
-  // Prefer dist path if it exists (production), fallback to dev path
-  const uiPath = fs.existsSync(distPath) ? distPath : devPath;
+  const getUiPath = (): string => {
+    if (!resolvedUiPath) {
+      // Robust UI path resolution:
+      // 1. When running from 'dist/auth/dashboardRouter.js', UI is at '../dashboard-ui'
+      // 2. When running from 'src/auth/dashboardRouter.ts' (ts-node), UI is at '../../dashboard-ui/dist'
+      const distPath = path.resolve(__dirname, "../dashboard-ui");
+      const devPath = path.resolve(__dirname, "../../dashboard-ui/dist");
+      resolvedUiPath = fs.existsSync(distPath) ? distPath : devPath;
+    }
+    return resolvedUiPath;
+  };
 
-  // Note: Since 'path' doesn't have existSync in all environments, we use fs.existsSync if needed,
-  // but we can also just try to serve it or use a simple check.
-  router.use("/", express.static(uiPath));
+  let staticHandler: ReturnType<typeof express.static> | null = null;
+
+  router.use("/", (req, res, next) => {
+    if (!staticHandler) {
+      staticHandler = express.static(getUiPath());
+    }
+    staticHandler(req, res, next);
+  });
+
+  // SPA fallback: serve index.html for any route not matched above
+  // (e.g. /routes, /logs, /insights — handled by React Router on the client)
+  router.use((_req, res) => {
+    const indexPath = path.join(getUiPath(), "index.html");
+    res.sendFile(indexPath);
+  });
 
   return router;
 }
