@@ -326,52 +326,6 @@ export interface HistoryPoint {
   eventLoopLag: number;
 }
 
-export interface MetricSnapshot {
-  uptime: number;
-  totalRequests: number;
-  avgResponseTime: number;
-  slowRequests: number;
-  highQueryRequests: number;
-  rateLimitHits: number;
-  cacheHits: number;
-  cacheMisses: number;
-  cacheHitRate: number;
-  cacheSize: number;
-  totalBytesSent: number;
-  avgResponseSize: number;
-  insights: Insight[];
-  eventLoopLag: number;
-  memoryUsage: {
-    rss: number;
-    heapTotal: number;
-    heapUsed: number;
-    heapLimit: number;
-    external: number;
-  };
-  statusCodes: Record<number, number>;
-  routes: Record<string, RouteStats>;
-  recentLogs: LogEntry[];
-  blockedEvents: BlockedEvent[];
-  compressedEvents: CompressedEvent[];
-  history: HistoryPoint[];
-  systemInfo: {
-    nodeVersion: string;
-    platform: string;
-    arch: string;
-    cpus: number;
-    hostname: string;
-    totalMemory: number;
-    freeMemory: number;
-    processId: number;
-    uptimeFormatted: string;
-  };
-  cpuUsage: {
-    user: number;
-    system: number;
-    percent: number;
-  };
-}
-
 export interface Metrics {
   uptime: number;
   totalRequests: number;

@@ -65,6 +65,7 @@ describe("PrometheusExporter", () => {
       processId: 1234,
       uptimeFormatted: "1m",
     },
+    history: [],
   };
 
   it("should export system metrics correctly", () => {
