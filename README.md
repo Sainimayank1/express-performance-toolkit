@@ -120,6 +120,54 @@ app.use(toolkit.middleware);
 
 View the dashboard at: `http://localhost:3000/ept`
 
+## API Reference
+
+### `performanceToolkit(options?)`
+
+The main entry point for the toolkit. It returns a `ToolkitInstance` object.
+
+#### `ToolkitOptions`
+
+| Option | Type | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `cache` | `CacheOptions` | `false` | LRU caching configuration. |
+| `compression` | `CompressionOptions` | `true` | Response compression settings. |
+| `logging` | `LoggerOptions` | `true` | Structured logging & slow request detection. |
+| `rateLimit` | `RateLimitOptions` | `false` | IP-based rate limiting. |
+| `dashboard` | `DashboardOptions` | `true` | Real-time UI dashboard. |
+| `health` | `HealthCheckOptions` | `true` | Liveness/Readiness JSON endpoint. |
+| `alerts` | `AlertOptions` | `false` | Webhook notifications for performance anomalies. |
+| `tracing` | `TracingOptions` | `true` | Distributed tracing (Request IDs). |
+| `history` | `HistoryOptions` | `true` | Time-series metrics history. |
+
+### `ToolkitInstance`
+
+The object returned by `performanceToolkit()`.
+
+- **`middleware`**: The Express middleware to be used with `app.use()`.
+- **`store`**: The `MetricsStore` instance for programmatic access to raw metrics.
+
+### Instrumentation
+
+#### N+1 Query Tracking
+Inject tracking into your data layer to detect inefficient patterns:
+
+```ts
+app.get('/users', async (req, res) => {
+  const users = await db.users.find();
+  
+  for (const user of users) {
+    // Each call increments the query count for this request
+    req.ept.trackQuery('User Profile Fetch');
+    await db.profiles.find({ userId: user.id });
+  }
+  
+  res.json(users);
+});
+```
+
+The toolkit will automatically flag this route in the dashboard if the number of queries exceeds your configured threshold.
+
 ## Philosophy
 
 The Express Performance Toolkit (EPT) philosophy is to provide robust, zero-config performance optimizations and observation tools that "just work". It's designed to be lightweight, resilient (graceful fallbacks), and highly actionable for developers building modern Express APIs.

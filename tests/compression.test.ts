@@ -56,4 +56,48 @@ describe("Compression Middleware", () => {
 
     expect(response.headers["content-encoding"]).toBeUndefined();
   });
+
+  it("should not compress if data is below threshold", async () => {
+    const app = express();
+    const toolkit = performanceToolkit({
+      compression: { threshold: 1000 },
+      logging: false,
+    });
+    app.use(toolkit.middleware);
+    app.get("/small", (req, res) => {
+      res.type("text/plain");
+      res.send("Small payload");
+    });
+
+    const response = await request(app)
+      .get("/small")
+      .set("Accept-Encoding", "gzip");
+
+    expect(response.status).toBe(200);
+    expect(response.headers["content-encoding"]).toBeUndefined();
+
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    const metrics = toolkit.store.getMetrics();
+    // Should NOT have a compressed event for this request
+    const hasEvent = metrics.compressedEvents.some((e) => e.path === "/small");
+    expect(hasEvent).toBe(false);
+  });
+
+  it("should handle identity encoding", async () => {
+    const app = express();
+    const toolkit = performanceToolkit({
+      compression: { threshold: 0 },
+      logging: false,
+    });
+    app.use(toolkit.middleware);
+    app.get("/identity", (req, res) => {
+      res.send("No compression requested");
+    });
+
+    const response = await request(app)
+      .get("/identity")
+      .set("Accept-Encoding", "identity");
+
+    expect(response.headers["content-encoding"]).toBeUndefined();
+  });
 });

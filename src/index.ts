@@ -54,7 +54,7 @@ function setupLogger(
   const config = normalizeOption<LoggerOptions>(option, { enabled: true });
   if (config.enabled !== false) {
     config.exclude = [dashboardPath, ...(config.exclude || [])];
-    middlewares.push(createLoggerMiddleware(config, store));
+    middlewares.push(createLoggerMiddleware(config, store, dashboardPath));
   }
 }
 
@@ -80,10 +80,11 @@ function setupCompression(
   option: boolean | CompressionOptions | undefined,
   middlewares: any[],
   store: MetricsStore,
+  dashboardPath: string,
 ): void {
   const config = normalizeOption<CompressionOptions>(option, { enabled: true });
   if (config.enabled !== false) {
-    middlewares.push(createCompressionMiddleware(config, store));
+    middlewares.push(createCompressionMiddleware(config, store, dashboardPath));
   }
 }
 
@@ -287,7 +288,7 @@ export function performanceToolkit(
   setupRateLimiter(options.rateLimit, store, middlewares, dashboardPath);
   setupLogger(options.logging, store, middlewares, dashboardPath);
   const cache = setupCache(options.cache, store, middlewares, dashboardPath);
-  setupCompression(options.compression, middlewares, store);
+  setupCompression(options.compression, middlewares, store, dashboardPath);
   setupQueryHelper(options.queryHelper, middlewares);
   setupHealthCheck(options.health, middlewares, store);
   const alerter = setupAlertManager(options.alerts, store);

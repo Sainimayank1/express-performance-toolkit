@@ -109,6 +109,7 @@ class LogRotator {
 export function createLoggerMiddleware(
   options: LoggerOptions = {},
   store: MetricsStore,
+  dashboardPath: string = DEFAULT_DASHBOARD_PATH,
 ): (req: Request, res: Response, next: NextFunction) => void {
   const {
     slowRequestThreshold = DEFAULT_LOG_OPTIONS.slowRequestThreshold,
@@ -152,7 +153,7 @@ export function createLoggerMiddleware(
       isExcluded ||
       reqPath.includes(API_METRICS_PATH) ||
       reqPath.includes(API_RESET_PATH) ||
-      reqPath.includes(DEFAULT_DASHBOARD_PATH)
+      reqPath.includes(dashboardPath)
     ) {
       return next();
     }

@@ -186,5 +186,30 @@ export function analyzeMetrics(metrics: Metrics): Insight[] {
     });
   }
 
+  // 7. Overall Cache Performance
+  const totalCacheRequests = metrics.cacheHits + metrics.cacheMisses;
+  if (totalCacheRequests > 20 && metrics.cacheHitRate < 10) {
+    insights.push({
+      type: "warning",
+      key: "low-cache-hit-rate",
+      title: "Low Cache Hit Rate",
+      message: `Overall cache hit rate is very low (${metrics.cacheHitRate}%).`,
+      action: "Review your cache TTL and keys to ensure better data locality.",
+      detail: [
+        `**Cache Hit Rate:** ${metrics.cacheHitRate}%`,
+        `**Hits:** ${metrics.cacheHits}`,
+        `**Misses:** ${metrics.cacheMisses}`,
+        "",
+        "### Why this matters",
+        "A low cache hit rate means your cache isn't effectively reducing the load on your backend. This could be due to short TTLs, a high number of unique request patterns, or cache keys that are too specific.",
+        "",
+        "### Recommended Actions",
+        "1. **Increase TTL:** If data doesn't change often, increase the `ttl` in your cache options.",
+        "2. **Normalize cache keys:** Ensure query parameters or headers that don't affect output aren't part of the cache key.",
+        "3. **Analyze cache churn:** Check if your cache size is too small, causing frequent evictions.",
+      ].join("\n"),
+    });
+  }
+
   return insights;
 }

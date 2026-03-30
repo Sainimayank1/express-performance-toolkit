@@ -128,4 +128,18 @@ describe("Smart Insights Engine", () => {
       insights.some((i: Insight) => i.title.includes("Event Loop Lagging")),
     ).toBe(true);
   });
+
+  it("should warn about low cache hit rate", () => {
+    const metrics: Metrics = {
+      ...mockMetrics,
+      cacheHits: 5,
+      cacheMisses: 95,
+      cacheHitRate: 5,
+    };
+
+    const insights = analyzeMetrics(metrics);
+    expect(
+      insights.some((i: Insight) => i.title.includes("Low Cache Hit Rate")),
+    ).toBe(true);
+  });
 });

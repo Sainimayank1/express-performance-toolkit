@@ -11,11 +11,22 @@ import {
 import { MetricsStore } from "../store";
 
 /**
+ * Calculate the byte length of a chunk of data.
+ */
+function getByteLength(chunk: any, encoding?: string): number {
+  if (!chunk) return 0;
+  return Buffer.isBuffer(chunk)
+    ? chunk.length
+    : Buffer.byteLength(chunk, (encoding || "utf8") as BufferEncoding);
+}
+
+/**
  * Create compression middleware with sensible defaults.
  */
 export function createCompressionMiddleware(
   options: CompressionOptions = {},
   store?: MetricsStore,
+  dashboardPath: string = DEFAULT_DASHBOARD_PATH,
 ): (req: Request, res: Response, next: NextFunction) => void {
   const { threshold = 1024, level = 6 } = options;
 
@@ -39,61 +50,41 @@ export function createCompressionMiddleware(
     let compressedSize = 0;
 
     // 1. Wrap original methods to count compressed bytes (downstream to socket)
-    const socketWrite = res.write;
-    const socketEnd = res.end;
+    const socketWrite = res.write.bind(res);
+    const socketEnd = res.end.bind(res);
 
-    res.write = function (...args: any[]) {
-      const chunk = args[0];
-      if (chunk) {
-        compressedSize += Buffer.isBuffer(chunk)
-          ? chunk.length
-          : Buffer.byteLength(chunk);
-      }
-      return socketWrite.apply(res, args as any);
-    } as any;
+    (res as any).write = (chunk: any, encoding: any, callback: any) => {
+      compressedSize += getByteLength(chunk, encoding);
+      return socketWrite(chunk, encoding, callback);
+    };
 
-    res.end = function (...args: any[]) {
-      const chunk = args[0];
-      if (chunk) {
-        compressedSize += Buffer.isBuffer(chunk)
-          ? chunk.length
-          : Buffer.byteLength(chunk);
-      }
-      return socketEnd.apply(res, args as any);
-    } as any;
+    (res as any).end = (chunk: any, encoding: any, callback: any) => {
+      compressedSize += getByteLength(chunk, encoding);
+      return socketEnd(chunk, encoding, callback);
+    };
 
     // 2. Run compression middleware
     compress(req, res, () => {
       // 3. Wrap again to count original bytes (upstream from compression)
-      const middlewareWrite = res.write;
-      const middlewareEnd = res.end;
+      const middlewareWrite = res.write.bind(res);
+      const middlewareEnd = res.end.bind(res);
 
-      res.write = function (...args: any[]) {
-        const chunk = args[0];
-        if (chunk) {
-          originalSize += Buffer.isBuffer(chunk)
-            ? chunk.length
-            : Buffer.byteLength(chunk);
-        }
-        return middlewareWrite.apply(res, args as any);
-      } as any;
+      (res as any).write = (chunk: any, encoding: any, callback: any) => {
+        originalSize += getByteLength(chunk, encoding);
+        return middlewareWrite(chunk, encoding, callback);
+      };
 
-      res.end = function (...args: any[]) {
-        const chunk = args[0];
-        if (chunk) {
-          originalSize += Buffer.isBuffer(chunk)
-            ? chunk.length
-            : Buffer.byteLength(chunk);
-        }
-        return middlewareEnd.apply(res, args as any);
-      } as any;
+      (res as any).end = (chunk: any, encoding: any, callback: any) => {
+        originalSize += getByteLength(chunk, encoding);
+        return middlewareEnd(chunk, encoding, callback);
+      };
 
       res.on("finish", () => {
         const reqPath = req.originalUrl || req.url;
 
         // Skip internal toolkit paths
         if (
-          reqPath.startsWith(DEFAULT_DASHBOARD_PATH) ||
+          reqPath.startsWith(dashboardPath) ||
           reqPath.includes(API_METRICS_PATH) ||
           reqPath.includes(API_RESET_PATH)
         ) {
