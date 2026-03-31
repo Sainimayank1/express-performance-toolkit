@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [2.4.0] — In Development
+## [3.0.0] — 2025-03-31
 
 ### ✨ New Features
 
@@ -15,6 +15,7 @@ All notable changes to this project will be documented in this file.
 - **Prometheus Metrics Export** — Expose application and system metrics in Prometheus exposition format at `/ept/metrics` (configurable). This enables integration with Grafana, Datadog, and more.
 - **Metrics History**: Stores periodic snapshots (default every 30s) in a circular buffer to enable time-series charts on the dashboard.
 - **Smart Webhook / Alert Notifications** — Edge-triggered HTTP alerts when metric thresholds are breached (response time, memory, CPU, etc.). Fires exactly once per breach to prevent alert fatigue, and resets after recovery. Supports any HTTP endpoint via a unified `webhooks` array. Each entry can be a plain URL (generic JSON POST) or a `WebhookConfig` object with a `format` of `'slack'` (Block Kit), `'discord'` (Embed), or `'generic'`. Includes custom `onAlert` callback and `>=`/`<=`/`<`/`>` comparators.
+
 ### ⚡ Performance
 
 - **O(1) Circular Buffers** — Replaced `Array.push()`/`Array.shift()` ring buffers in `MetricsStore` with index-based circular buffers for `logs`, `blockedEvents`, and `compressedEvents`. This eliminates O(n) array copies on every request at high throughput.
