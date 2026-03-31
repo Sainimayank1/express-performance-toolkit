@@ -16,6 +16,7 @@ export interface BlockedEvent {
   path: string;
   timestamp: number;
   method: string;
+  requestId?: string;
 }
 
 export interface CompressedEvent {
@@ -37,6 +38,7 @@ export interface LogEntry {
   cached: boolean;
   queryCount?: number;
   highQueries?: boolean;
+  requestId?: string;
 }
 
 export interface Insight {
@@ -49,10 +51,13 @@ export interface Insight {
 }
 
 export interface HistoryData {
-  time: string;
-  lag: number;
-  memory: number;
-  cpu: number;
+  timestamp: number;
+  requests: number;
+  avgResponseTime: number;
+  cpuPercent: number;
+  memoryUsed: number;
+  errors: number;
+  eventLoopLag: number;
 }
 
 export interface MetricsData {
@@ -98,6 +103,7 @@ export interface MetricsData {
   recentLogs: LogEntry[];
   blockedEvents: BlockedEvent[];
   compressedEvents: CompressedEvent[];
+  history: HistoryData[];
 }
 
 export function useMetrics(enabled: boolean = true) {
@@ -125,22 +131,7 @@ export function useMetrics(enabled: boolean = true) {
           setData(metrics);
           setError(null);
 
-          // Append to history (keep last 50 data points)
-          setHistory((prev) => {
-            const timeStr = new Date().toLocaleTimeString([], {
-              hour12: false,
-              hour: "2-digit",
-              minute: "2-digit",
-              second: "2-digit",
-            });
-            const newPoint = {
-              time: timeStr,
-              lag: metrics.eventLoopLag,
-              memory: Math.round(metrics.memoryUsage.heapUsed / 1024 / 1024),
-              cpu: metrics.cpuUsage.percent,
-            };
-            return [...prev, newPoint].slice(-30);
-          });
+          setHistory(metrics.history || []);
         }
       } catch (e: unknown) {
         if (mounted) {

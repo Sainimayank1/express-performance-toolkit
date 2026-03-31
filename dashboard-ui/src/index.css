@@ -1,9 +1,22 @@
 :root {
+  --font-sans: "Inter", sans-serif;
+  --font-display: "Outfit", sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+}
+
+:root, [data-theme='dark'] {
   --bg-base: #09090b; /* zinc-950 */
   --bg-surface: #18181b; /* zinc-900 */
   --bg-surface-glass: rgba(24, 24, 27, 0.7);
   --bg-hover: #27272a; /* zinc-800 */
   --border: #27272a;
+  --border-subtle: rgba(255, 255, 255, 0.04);
+
+  --surface-low: rgba(255, 255, 255, 0.02);
+  --surface-mid: rgba(0, 0, 0, 0.2);
+  --surface-high: rgba(255, 255, 255, 0.05);
+  --gauge-bg: rgba(255, 255, 255, 0.05);
+  --chart-bg: rgba(0, 0, 0, 0.2);
 
   --text-100: #f4f4f5;
   --text-200: #e4e4e7;
@@ -16,6 +29,40 @@
   --accent-rose: #f43f5e;
   --accent-amber: #f59e0b;
 
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -1px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme='light'] {
+  --bg-base: #f8f8f9; /* slim zinc-50 */
+  --bg-surface: #ffffff;
+  --bg-surface-glass: rgba(255, 255, 255, 0.8);
+  --bg-hover: #f1f1f4; /* zinc-100 */
+  --border: #e2e2e7; /* zinc-200 */
+  --border-subtle: #f1f5f9;
+
+  --surface-low: #f1f5f9;
+  --surface-mid: #ffffff;
+  --surface-high: #f8fafc;
+  --gauge-bg: #e2e8f0;
+  --chart-bg: #f8fafc;
+
+  --text-100: #09090b; /* zinc-950 */
+  --text-200: #27272a; /* zinc-800 */
+  --text-300: #52525b; /* zinc-600 */
+  --text-400: #71717a; /* zinc-500 */
+
+  --accent-cyan: #0891b2;
+  --accent-emerald: #059669;
+  --accent-indigo: #4f46e5;
+  --accent-rose: #e11d48;
+  --accent-amber: #d97706;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+:root {
   --grad-primary: linear-gradient(
     135deg,
     var(--accent-cyan),
@@ -33,14 +80,7 @@
   );
   --grad-danger: linear-gradient(135deg, var(--accent-rose), #9f1239);
 
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
-  --shadow-md:
-    0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -1px rgba(0, 0, 0, 0.4);
-  --shadow-glow: 0 0 20px rgba(6, 182, 212, 0.15);
-
-  --font-sans: "Inter", sans-serif;
-  --font-display: "Outfit", sans-serif;
-  --font-mono: "JetBrains Mono", monospace;
+  --shadow-glow: 0 0 20px rgba(99, 102, 241, 0.1);
 }
 
 * {
@@ -60,11 +100,12 @@ body {
   background-image:
     radial-gradient(
       circle at 15% 50%,
-      rgba(99, 102, 241, 0.08),
+      rgba(99, 102, 241, 0.04),
       transparent 25%
     ),
-    radial-gradient(circle at 85% 30%, rgba(6, 182, 212, 0.08), transparent 25%);
+    radial-gradient(circle at 85% 30%, rgba(6, 182, 212, 0.04), transparent 25%);
   background-attachment: fixed;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 /* ── Header ─────────────────────── */
@@ -120,20 +161,60 @@ body {
 .nav-actions {
   display: flex;
   align-items: center;
-  gap: 1.5rem;
+  gap: 1.25rem;
+}
+
+.nav-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border);
+  color: var(--text-300);
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+[data-theme='light'] .nav-btn {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.nav-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-100);
+  transform: translateY(-1px);
+  border-color: var(--accent-indigo);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.logout-btn:hover {
+  color: var(--accent-rose);
+  border-color: rgba(244, 63, 94, 0.4);
+}
+
+.theme-toggle:hover {
+  color: var(--accent-amber);
+  border-color: rgba(245, 158, 11, 0.4);
 }
 
 .live-indicator {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
   color: var(--text-300);
   font-weight: 500;
   background: rgba(255, 255, 255, 0.03);
-  padding: 0.25rem 0.75rem;
+  padding: 0.35rem 0.85rem;
   border-radius: 99px;
   border: 1px solid var(--border);
+}
+
+[data-theme='light'] .live-indicator {
+  background: rgba(0, 0, 0, 0.02);
 }
 
 .pulse-dot {

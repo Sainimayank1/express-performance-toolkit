@@ -22,7 +22,7 @@ export function CachePanel({ data }: { data: MetricsData }) {
                 cy="21"
                 r="15.915"
                 fill="none"
-                stroke="var(--bg-hover)"
+                stroke="var(--gauge-bg)"
                 strokeWidth="6"
               />
               <circle
@@ -64,8 +64,8 @@ export function CachePanel({ data }: { data: MetricsData }) {
               <div
                 className="legend-dot"
                 style={{
-                  background: "var(--bg-hover)",
-                  border: "1px solid var(--text-400)",
+                  background: "var(--gauge-bg)",
+                  border: "1px solid var(--border)",
                 }}
               ></div>
               <span>Misses</span>

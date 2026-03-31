@@ -5,19 +5,14 @@ import { MetricsStore } from "../store";
 import { DashboardOptions } from "../types";
 import {
   DEFAULT_AUTH_OPTIONS,
+  DEFAULT_SESSION_TTL,
+  DEFAULT_MAX_SESSIONS,
   API_METRICS_PATH,
   API_RESET_PATH,
+  DEFAULT_METRICS_PATH,
 } from "../constants";
 import { SessionStore } from "./session";
-
-/**
- * 🔐 Session-based authentication for the dashboard.
- * We use an in-memory session store with random session IDs.
- */
-const sessionStore = new SessionStore({
-  ttl: 24 * 60 * 60 * 1000, // 24 hours
-  maxSessions: 1000,
-});
+import { PrometheusExporter } from "../tools/exporter";
 
 /**
  * Create the dashboard Express router.
@@ -28,11 +23,24 @@ export function createDashboardRouter(
   options: DashboardOptions = {},
 ): Router {
   const router = Router();
+  const exporter = new PrometheusExporter();
+
+  // Each toolkit instance gets its own session store (no shared state)
+  const sessionStore = new SessionStore({
+    ttl: DEFAULT_SESSION_TTL,
+    maxSessions: DEFAULT_MAX_SESSIONS,
+  });
 
   // Default auth settings if none provided (Security by default)
   // To explicitly disable auth, pass auth: null or a falsy value in the config
   const auth =
     options.auth === null ? null : options.auth || DEFAULT_AUTH_OPTIONS;
+
+  const metricsExportConfig = {
+    enabled: options.exporter?.enabled || false,
+    path: options.exporter?.path || DEFAULT_METRICS_PATH,
+    requireAuth: options.exporter?.requireAuth || false,
+  };
 
   router.use(express.json());
 
@@ -117,24 +125,58 @@ export function createDashboardRouter(
     res.json(store.getMetrics());
   });
 
+  // Prometheus metrics export endpoint
+  if (metricsExportConfig.enabled) {
+    const metricsHandler = (_req: Request, res: Response) => {
+      const metricsData = store.getMetrics();
+      const prometheusData = exporter.export(metricsData);
+      res.set("Content-Type", "text/plain; version=0.0.4");
+      res.send(prometheusData);
+    };
+
+    if (metricsExportConfig.requireAuth) {
+      router.get(metricsExportConfig.path, requireAuth, metricsHandler);
+    } else {
+      router.get(metricsExportConfig.path, metricsHandler);
+    }
+  }
+
   // Reset metrics endpoint (Protected)
   router.post(API_RESET_PATH, requireAuth, (_req: Request, res: Response) => {
     store.reset();
     res.json({ success: true, message: "Metrics reset" });
   });
 
-  // Robust UI path resolution:
-  // 1. When running from 'dist/dashboard/dashboardRouter.js', UI is at '../dashboard-ui'
-  // 2. When running from 'src/dashboard/dashboardRouter.ts' (ts-node), UI is at '../../dashboard-ui/dist'
-  const distPath = path.resolve(__dirname, "../dashboard-ui");
-  const devPath = path.resolve(__dirname, "../../dashboard-ui/dist");
+  // Lazy-load dashboard UI assets to reduce initial middleware overhead
+  let resolvedUiPath: string | null = null;
 
-  // Prefer dist path if it exists (production), fallback to dev path
-  const uiPath = fs.existsSync(distPath) ? distPath : devPath;
+  const getUiPath = (): string => {
+    if (!resolvedUiPath) {
+      // Robust UI path resolution:
+      // 1. When running from 'dist/auth/dashboardRouter.js', UI is at '../dashboard-ui'
+      // 2. When running from 'src/auth/dashboardRouter.ts' (ts-node), UI is at '../../dashboard-ui/dist'
+      const distPath = path.resolve(__dirname, "../dashboard-ui");
+      const devPath = path.resolve(__dirname, "../../dashboard-ui/dist");
+      resolvedUiPath = fs.existsSync(distPath) ? distPath : devPath;
+    }
+    return resolvedUiPath;
+  };
 
-  // Note: Since 'path' doesn't have existSync in all environments, we use fs.existsSync if needed,
-  // but we can also just try to serve it or use a simple check.
-  router.use("/", express.static(uiPath));
+  let staticHandler: ReturnType<typeof express.static> | null = null;
+
+  router.use("/", (req, res, next) => {
+    if (!staticHandler) {
+      staticHandler = express.static(getUiPath());
+    }
+    staticHandler(req, res, next);
+  });
+
+  // SPA fallback: serve index.html for any route not matched above
+  // (e.g. /routes, /logs, /insights — handled by React Router on the client)
+  router.use((_req, res) => {
+    const indexPath = path.join(getUiPath(), "index.html");
+    res.sendFile(indexPath);
+  });
 
   return router;
 }

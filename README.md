@@ -52,8 +52,13 @@ npm install express-performance-toolkit
 - **Response Compression:** Automatic Gzip/Deflate/Brotli compression to minimize bandwidth usage.
 - **Smart Rate Limiting:** IP-based protection with real-time tracking of blocked traffic.
 - **Slow Request Detection:** Built-in observability with structured logging and performance alerts.
+- **Webhook Alerting:** Smart edge-triggered notifications for Slack, Discord, and custom integrations to prevent alert fatigue.
+- **Health Check:** Top-level lightweight JSON endpoint for liveness/readiness orchestration probes.
+- **Request Tracing:** Automatic generation and propagation of `X-Request-Id` for distributed tracing.
 - **N+1 Query Tracking:** Effortlessly detect inefficient database patterns with simple instrumentation.
 - **Performance Dashboard:** A sleek, real-time UI to monitor your server's health, throughput, and anomalies.
+- **Metrics Export:** Expose application and system metrics in Prometheus format (default: `/ept/metrics`) for Grafana and OTEL compatibility.
+- **Metrics History:** Automatic time-series snapshots for visualizing throughput, latency, and resource trends over time.
 
 ## Docs & Community
 
@@ -88,6 +93,24 @@ const toolkit = performanceToolkit({
     enabled: true,
     path: "/ept", // Dashboard automatically mounted here
     auth: { username: "admin", password: "ept-toolkit" }, // Default credentials
+    exporter: { enabled: true, path: "/metrics", requireAuth: false }, // Prometheus export
+  },
+  health: {
+    enabled: true,
+    path: "/health",
+  },
+  alerts: {
+    webhooks: [process.env.SLACK_WEBHOOK_URL],
+    rules: [{ metric: "avgResponseTime", threshold: 1500 }]
+  },
+  tracing: {
+    enabled: true, // default true
+    headerName: "x-request-id", // default x-request-id
+  },
+  history: {
+    enabled: true,
+    intervalMs: 30000, // Snapshot every 30s
+    maxPoints: 60, // Keep 30 mins of history
   },
 });
 
@@ -96,6 +119,54 @@ app.use(toolkit.middleware);
 ```
 
 View the dashboard at: `http://localhost:3000/ept`
+
+## API Reference
+
+### `performanceToolkit(options?)`
+
+The main entry point for the toolkit. It returns a `ToolkitInstance` object.
+
+#### `ToolkitOptions`
+
+| Option | Type | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `cache` | `CacheOptions` | `false` | LRU caching configuration. |
+| `compression` | `CompressionOptions` | `true` | Response compression settings. |
+| `logging` | `LoggerOptions` | `true` | Structured logging & slow request detection. |
+| `rateLimit` | `RateLimitOptions` | `false` | IP-based rate limiting. |
+| `dashboard` | `DashboardOptions` | `true` | Real-time UI dashboard. |
+| `health` | `HealthCheckOptions` | `true` | Liveness/Readiness JSON endpoint. |
+| `alerts` | `AlertOptions` | `false` | Webhook notifications for performance anomalies. |
+| `tracing` | `TracingOptions` | `true` | Distributed tracing (Request IDs). |
+| `history` | `HistoryOptions` | `true` | Time-series metrics history. |
+
+### `ToolkitInstance`
+
+The object returned by `performanceToolkit()`.
+
+- **`middleware`**: The Express middleware to be used with `app.use()`.
+- **`store`**: The `MetricsStore` instance for programmatic access to raw metrics.
+
+### Instrumentation
+
+#### N+1 Query Tracking
+Inject tracking into your data layer to detect inefficient patterns:
+
+```ts
+app.get('/users', async (req, res) => {
+  const users = await db.users.find();
+  
+  for (const user of users) {
+    // Each call increments the query count for this request
+    req.ept.trackQuery('User Profile Fetch');
+    await db.profiles.find({ userId: user.id });
+  }
+  
+  res.json(users);
+});
+```
+
+The toolkit will automatically flag this route in the dashboard if the number of queries exceeds your configured threshold.
 
 ## Philosophy
 

@@ -8,8 +8,10 @@ export const DEFAULT_AUTH_OPTIONS = {
 
 // Dashboard
 export const DEFAULT_DASHBOARD_PATH = "/ept";
+export const DEFAULT_METRICS_PATH = "/metrics";
 export const API_METRICS_PATH = "/api/metrics";
 export const API_RESET_PATH = "/api/reset";
+export const DEFAULT_HEALTH_PATH = "/health";
 
 // Rate Limiting
 export const DEFAULT_RATE_LIMIT_OPTIONS = {
@@ -17,6 +19,7 @@ export const DEFAULT_RATE_LIMIT_OPTIONS = {
   max: 100, // 100 requests per windowMs
   statusCode: 429,
   message: "Too many requests, please try again later.",
+  redis: null as null,
 };
 
 // Compression
@@ -59,3 +62,34 @@ export const DEFAULT_CACHE_OPTIONS = {
   redis: null,
   methods: ["GET"],
 };
+
+// Tracing
+export const DEFAULT_TRACING_OPTIONS = {
+  enabled: true,
+  headerName: "x-request-id",
+};
+
+// Health Check
+export const DEFAULT_HEALTH_CHECK_OPTIONS = {
+  enabled: true,
+  path: DEFAULT_HEALTH_PATH,
+};
+
+// Store
+export const MAX_BLOCKED_EVENTS = 100;
+export const MAX_COMPRESSED_EVENTS = 100;
+export const DEFAULT_MAX_LOGS = 1000;
+export const DEFAULT_HISTORY_INTERVAL = 30000; // 30 seconds
+export const DEFAULT_HISTORY_MAX_POINTS = 60; // 30 minutes
+
+// Session Store
+export const DEFAULT_SESSION_TTL = 24 * 60 * 60 * 1000; // 24 hours
+export const DEFAULT_MAX_SESSIONS = 1000;
+
+// Alerter
+export const DEFAULT_ALERT_INTERVAL_MS = 15_000; // 15 seconds
+export const WEBHOOK_FORMAT = {
+  slack: "slack",
+  discord: "discord",
+  generic: "generic",
+} as const;

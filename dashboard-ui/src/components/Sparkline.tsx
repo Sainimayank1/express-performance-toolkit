@@ -6,6 +6,7 @@ interface SparklineProps {
   height?: number;
   color: string;
   gradientId: string;
+  activeIndex?: number | null;
 }
 
 /** 
@@ -18,9 +19,10 @@ export function Sparkline({
   height = 60,
   color,
   gradientId,
+  activeIndex,
 }: SparklineProps) {
-  const { linePath, areaPath } = useMemo(() => {
-    if (data.length < 2) return { linePath: "", areaPath: "" };
+  const { linePath, areaPath, activePoint } = useMemo(() => {
+    if (data.length < 2) return { linePath: "", areaPath: "", activePoint: null };
     
     const max = Math.max(...data, 1);
     const min = 0;
@@ -44,8 +46,12 @@ export function Sparkline({
 
     const a = `${d} L ${width},${height} L 0,${height} Z`;
     
-    return { linePath: d, areaPath: a };
-  }, [data, width, height]);
+    const activePoint = activeIndex !== undefined && activeIndex !== null && points[activeIndex] 
+      ? points[activeIndex] 
+      : null;
+
+    return { linePath: d, areaPath: a, activePoint };
+  }, [data, width, height, activeIndex]);
 
   if (data.length < 2) return <div style={{ height, width: '100%' }} />;
 
@@ -77,6 +83,28 @@ export function Sparkline({
         strokeLinejoin="round"
         style={{ transition: "d 0.3s ease-in-out" }}
       />
+      {activePoint && (
+        <g>
+          {/* Outer glow ring */}
+          <circle
+            cx={activePoint.x}
+            cy={activePoint.y}
+            r="6"
+            fill={color}
+            style={{ opacity: 0.2, transition: "cx 0.1s linear, cy 0.1s linear" }}
+          />
+          {/* Core point */}
+          <circle
+            cx={activePoint.x}
+            cy={activePoint.y}
+            r="3.5"
+            fill="var(--surface-high)"
+            stroke={color}
+            strokeWidth="2"
+            style={{ transition: "cx 0.1s linear, cy 0.1s linear" }}
+          />
+        </g>
+      )}
     </svg>
   );
 }
